@@ -19,14 +19,30 @@ namespace IQCSystemV2
         private WebViewFunctions webViewFunctions;
         private string username = "ZZPDE31G";
         private string password = "ZZPDE31G";
-        public Inspection()
+        private string userID = "";
+
+        private APIHandler apiHandler = new APIHandler();
+
+        public Inspection(string userID)
         {
             InitializeComponent();
             webViewFunctions = new WebViewFunctions(webView21);
 
             Uri emes_link = new Uri("http://" + username + ":" + password + "@10.248.1.10/BIPHMES/FLoginNew.aspx");
             webView21.Source = emes_link;
+            this.userID = userID;
 
+            
+        }
+
+        private async Task SetStorage()
+        {
+            Dictionary<string, string> post = new Dictionary<string, string> {
+                { "id_number", this.userID.ToString() }
+            };
+            JObject data = await apiHandler.APIPostCall("http://apbiphbpsts01:8080/homs/api/user/getUser.php", post);
+
+            await webViewFunctions.ExecuteJavascript($"localStorage.setItem(\"user\", JSON.stringify({data["data"]}));");
         }
 
         private async Task Login(string username, string password, Uri link)
@@ -45,6 +61,8 @@ namespace IQCSystemV2
             //LOGIN
             Uri ordersCheckTable = new Uri("http://" + username + ":" + password + "@10.248.1.10/BIPHMES/BenQGuru.eMES.Web.IQC/FIQCCheckTableMP.aspx");
             Login(username, password, ordersCheckTable);
+
+            SetStorage();
         }
 
         private async void webView21_NavigationCompleted(object sender, Microsoft.Web.WebView2.Core.CoreWebView2NavigationCompletedEventArgs e)
@@ -84,6 +102,7 @@ namespace IQCSystemV2
                                 <button id=""dci"" class=""btn btn-primary"">DCI</button>
                                 <button id=""ng"" class=""btn btn-primary"">NG Illustration</button>
                                 <button id=""qhc"" class=""btn btn-primary"">Quality History Card</button>
+                                <button id=""generalWI"" class=""btn btn-primary"">General Work Instructions</button>
                             </div>
                             <div id=""items-container""></div>
                             
@@ -152,22 +171,33 @@ namespace IQCSystemV2
                         });
                         return data;
                     }
-
+                    
+                    ////////////////////////////// MAIN FUNCTION ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                    
                     (async () => {
+                        disableSubmitButton()
+                        await getMesName()
+                        
+
+                        //Attach events to ALL new buttons
+                        document.getElementById(""cmdSave"").addEventListener('click', async function () {
+                            //e.preventDefault();
+                            await insertInspectionData();
+                        });
+
                         items = await getAllItems();
                         console.log(""Got items:"", items);
-
-                        startTimer();
 
                         // Map your button IDs to category keys
                         const categoryMap = {
                             threeD: ""threeD"",
-                            twoD: ""2d"",
+                            twoD: ""twoD"",
                             wi: ""wi"",
                             artwork: ""artwork"",
                             dci: ""dci"",
                             ng: ""ng"",
-                            qhc: ""qhc""
+                            qhc: ""qhc"",
+                            generalWI: ""generalWI""
                         };
 
                         Object.entries(categoryMap).forEach(([btnId, category]) => {
@@ -178,7 +208,12 @@ namespace IQCSystemV2
                                 btn.classList.remove(""btn-primary""); // remove active color
                             }
                         });
+
+                        startTimer();
+
                     })();
+
+                    //////////////////// FUNCTIONS ///////////////////////////////////////////////////////////////////////////////
 
                     function generateItems(category) {
                         let container = document.getElementById('items-container');
@@ -247,6 +282,7 @@ namespace IQCSystemV2
                     document.getElementById('dci').addEventListener('click', () => generateItems('dci'));
                     document.getElementById('ng').addEventListener('click', () => generateItems('ng'));
                     document.getElementById('qhc').addEventListener('click', () => generateItems('qhc'));
+                    document.getElementById('generalWI').addEventListener('click', () => generateItems('generalWI'));
 
                     document.getElementsByClassName('iqc-items')[0].addEventListener('click', function () {
                         
@@ -269,11 +305,141 @@ namespace IQCSystemV2
 
                         // Update every second
                         timerInterval = setInterval(() => {
-                            const elapsed = Math.floor((Date.now() - startTime) / 1000); // seconds
+                            const elapsedMinutes = Math.floor((Date.now() - startTime) / 60000); // whole minutes
                             const txt = document.getElementById(""txtCheckTime"");
-                            if (txt) txt.value = elapsed; // update the input value
+                            if (txt) txt.value = elapsedMinutes; // update with whole minutes
                         }, 1000);
                     }
+
+                    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+                    function disableSubmitButton(){
+                        document.getElementById(""cmdSubmit"").disabled = true;
+                    }
+
+                    async function getInspectionData() {
+                        try {
+                            const response = await fetch('http://apbiphiqcwb01/IQCSystemAPI/API/InspectionDetails', {
+                                method: 'GET',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                }
+                            });
+
+                            if (!response.ok) {
+                                console.error(""HTTP error:"", response.status);
+                                return;
+                            }
+
+                            const data = await response.json(); // parse JSON response
+                            console.log(""Received data:"", data);
+
+                        } catch (err) {
+                            console.error(""Fetch error:"", err);
+                        }
+                    }
+
+                    async function insertInspectionData(){
+                        let data = {
+                            ""checkLot"": document.getElementById(""txtIqcLotQuery"").value,
+                            ""dimenstionsMaxSamplingCheckQty"": document.getElementById(""txtMaxNumEdit"").value,
+                            ""continuedEligibility"": document.getElementById(""txtQualifiedLotNo"").value,
+                            ""relatedCheckLot"": document.getElementById(""txtUnitIQCLot"").value,
+
+                            ""stockInCollectDate"": document.getElementById(""txtInDateQuery"").value,
+                            ""partCode"": document.getElementById(""txtMCodeQuery"").value,
+                            ""samplingCheckQty"": document.getElementById(""txtCheckQty"").value,
+
+                            ""factoryCode"": document.getElementById(""txtFacCodeQuery"").value,
+                            ""partName"": document.getElementById(""txtMNameQuery"").value,
+                            ""allowQty"": document.getElementById(""txtAllowQty"").value,    
+
+                            ""standard"": document.getElementById(""txtStandard"").value,
+                            ""totalLotQty"": document.getElementById(""txtLotinQty"").value,
+                            ""samplingRejectQty"": document.getElementById(""txtRejectSize"").value,
+
+                            ""iqcCheckDate"": document.getElementById(""txtIQCCheckDate_GuruDate"").value,
+                            ""classOne"": document.getElementById(""ddlFirstClass"").value,
+                            ""samplingCheckDefectiveQty"": document.getElementById(""txtNgQty"").value,
+                            ""lotJudge"": document.getElementById(""ddlLotResult"").value,
+                            ""occuredEngineer"": document.getElementById(""ddlOccEng"").value,
+                            ""checkMonitor"": document.getElementById(""ddlMonitorCheckEdit"").value,
+
+                            ""lotNo"": document.getElementById(""txtLotNo"").value,
+                            ""classTwo"": document.getElementById(""ddlSecondClass"").value,
+                            ""rejectQty"": document.getElementById(""txtRejectQty"").value,
+                            ""processMethod"": document.getElementById(""txtTreatmentMeas"").value,
+                            ""checkUser"": document.getElementById(""txtCheckUser"").value,
+
+                            ""proficienceLevel"": document.getElementById(""ddlProLevel"").value,
+                            ""firstSize"": document.getElementById(""txtFirstSize"").value,
+                            ""secondSize"": document.getElementById(""txtSecondSize"").value,
+                            ""supervisor"": document.getElementsByName(""txtSupervisor$ctl00"")[0].value,
+                            ""modelNo"": document.getElementById(""txtModelNo"").value,
+                            ""designNoticeNo"": document.getElementById(""txtDESIGNNOTICE"").value,
+
+                            ""firstAppearance"": document.getElementById(""txtFirstAppear"").value,
+                            ""secondAppearance"": document.getElementById(""txtSecondAppear"").value,
+                            ""actualCheckTime"": document.getElementById(""txtCheckTime"").value,
+                            ""fourMNumber"": document.getElementById(""txtPowerofatt"").value,
+                            ""remarks"": document.getElementById(""txtMemoEdit"").value,
+
+                            ""outgoingInspectionReport"": document.getElementById(""ddlIndustry"").value,
+                            ""threeCDataConfirm"": document.getElementById(""ddlValidity"").value,
+
+                            
+                            ""createdBy"": '" + this.userID+ @"',
+
+                            ""visualCheckItems"": document.getElementById(""gridWebGridDiv"").outerHTML,
+                            ""dimensionCheckItems"": document.getElementById(""gridWebGrid1Div"").outerHTML
+                        };
+
+                    await fetch('http://apbiphiqcwb01:1116/API/InspectionDetails', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(data)
+                        }).catch(err => alert(err));
+                    }
+
+
+                    function getCheckItems(){
+                        let outer = document.getElementById(""checkResultBodyTable"").outerHTML;
+                        return outer;
+
+                    }
+
+                   async function getMesName() {
+                        try {
+                            const employeeNumber = JSON.parse(localStorage.getItem(""user"")).EmpNo;
+
+                            const res = await fetch(`http://apbiphiqcwb01:1116/API/SystemApproverLists/MesName/${employeeNumber}`, {
+                                method: 'GET',
+                                headers: { 'Content-Type': 'application/json' }
+                            });
+
+                            const mesName = await res.text(); // plain string response
+
+                            if (!mesName) {
+                                // empty response → just clear things out
+                                localStorage.setItem(""mesName"", """");
+                                document.getElementById(""txtCheckUser"").value = """";
+                                return;
+                            }
+
+                            localStorage.setItem(""mesName"", mesName);
+
+                            // only parse if there's actually something
+                            document.getElementById(""txtCheckUser"").value = JSON.parse(mesName).mesName;
+
+                        } catch (err) {
+                            console.error(""Error fetching MesName:"", err);
+                            alert(err);
+                        }
+                    }
+
+
 
                 ");
 

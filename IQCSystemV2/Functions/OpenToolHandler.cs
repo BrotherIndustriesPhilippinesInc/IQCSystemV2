@@ -20,6 +20,7 @@ namespace IQCSystemV2.Functions
         string ngDirectory;
         string qhcDirectory;
         string threedDirectory;
+        string generalWIDirectory;
 
         string serverResourceDirectory;
 
@@ -38,6 +39,8 @@ namespace IQCSystemV2.Functions
 
             qhcDirectory = "\\\\apbiphsh04\\41_PQCDept\\41a_IQC\\04 Inspection\\0000 OPEN Tool System\\05 QHC rev6";
 
+            generalWIDirectory = "\\\\apbiphsh04\\41_PQCDept\\41a_IQC\\04 Inspection\\0000 OPEN Tool System\\10 General Work I";
+
             serverResourceDirectory = "\\\\apbiphbpsts01\\htdocs\\iqc\\resources\\";
         }
 
@@ -54,6 +57,7 @@ namespace IQCSystemV2.Functions
                 result["dci"] = DCIList();
                 result["ng"] = NGList();
                 result["qhc"] = QHCList();
+                result["generalWI"] = GeneralWIList();
 
                 return result;
             });
@@ -68,19 +72,17 @@ namespace IQCSystemV2.Functions
             };
             return threeDList;
         }
-
         public JObject TwoDList()
         {
             string searchPattern = $"*{searchItem}*"; // Search for files containing the search term
             JObject twoDList = new JObject
             {
-                ["twoD"] = LoadFilesFromDirectory(twodDirectory, serverResourceDirectory + "2d", searchPattern)
+                ["twoD"] = LoadFilesFromDirectory(twodDirectory, serverResourceDirectory + "twoD", searchPattern)
             };
             return twoDList;
         }
         public JObject WIList()
         {
-
             string searchPattern = $"*{searchItem}*"; // Search for files containing the search term
             JObject wiList = new JObject
             {
@@ -130,6 +132,15 @@ namespace IQCSystemV2.Functions
                 ["qhc"] = LoadFilesFromDirectory(qhcDirectory, serverResourceDirectory + "qhc", searchPattern)
             };
             return qhcList;
+        }
+        public JObject GeneralWIList()
+        {
+            string searchPattern = $"*{searchItem}*"; // Search for files containing the search term
+            JObject generalWIList = new JObject
+            {
+                ["generalWI"] = LoadFilesFromDirectory(generalWIDirectory, serverResourceDirectory + "generalWI")
+            };
+            return generalWIList;
         }
 
         private JArray LoadFilesFromDirectory(string directoryPath, string pdfDestinationPath, string searchPattern = "*")

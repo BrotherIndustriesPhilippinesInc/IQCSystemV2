@@ -162,8 +162,18 @@ namespace IQCSystemV2
 
             if (data["actionName"].ToString() == "openInspectionWinform")
             {
-                Inspection inspectionForm = new Inspection();
+                Inspection inspectionForm = new Inspection(UserIdNumber);
                 inspectionForm.Show();
+            }
+            if (data["actionName"].ToString() == "openApprovalWinform")
+            {
+                Approval approvalForm = new Approval(UserIdNumber, data["data"]["checkLot"].ToString());
+                approvalForm.Show();
+            }
+            if (data["actionName"].ToString() == "openHistoryWinform")
+            {
+                History approvalForm = new History(UserIdNumber, data["data"]["checkLot"].ToString());
+                approvalForm.Show();
             }
         }
     }

@@ -5,7 +5,7 @@ VisualStudioVersion = 17.13.35825.156
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IQCSystemV2", "IQCSystemV2\IQCSystemV2.csproj", "{FE8F2AE4-0C95-4B43-A3FC-3F40599E9A81}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IQC API", "..\..\..\Documents\repos\IQC API\IQC API.csproj", "{4AD2A171-CECE-E65D-AEB0-F0EC3523C8E4}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IQC API", "IQC API\IQC API.csproj", "{AB550BC2-A681-A766-58B4-755D210479E8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -17,10 +17,10 @@ Global
 		{FE8F2AE4-0C95-4B43-A3FC-3F40599E9A81}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FE8F2AE4-0C95-4B43-A3FC-3F40599E9A81}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FE8F2AE4-0C95-4B43-A3FC-3F40599E9A81}.Release|Any CPU.Build.0 = Release|Any CPU
-		{4AD2A171-CECE-E65D-AEB0-F0EC3523C8E4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{4AD2A171-CECE-E65D-AEB0-F0EC3523C8E4}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{4AD2A171-CECE-E65D-AEB0-F0EC3523C8E4}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{4AD2A171-CECE-E65D-AEB0-F0EC3523C8E4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AB550BC2-A681-A766-58B4-755D210479E8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AB550BC2-A681-A766-58B4-755D210479E8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AB550BC2-A681-A766-58B4-755D210479E8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AB550BC2-A681-A766-58B4-755D210479E8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

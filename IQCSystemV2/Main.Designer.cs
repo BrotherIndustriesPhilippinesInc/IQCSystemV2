@@ -42,7 +42,7 @@
             this.webView21.Location = new System.Drawing.Point(0, 0);
             this.webView21.Name = "webView21";
             this.webView21.Size = new System.Drawing.Size(1264, 681);
-            this.webView21.Source = new System.Uri("http://apbiphbpsts01:8080/iqcv2/", System.UriKind.Absolute);
+            this.webView21.Source = new System.Uri("http://apbiphiqcwb01:8080/iqcv2/", System.UriKind.Absolute);
             this.webView21.TabIndex = 0;
             this.webView21.ZoomFactor = 1D;
             this.webView21.CoreWebView2InitializationCompleted += new System.EventHandler<Microsoft.Web.WebView2.Core.CoreWebView2InitializationCompletedEventArgs>(this.webView21_CoreWebView2InitializationCompleted);
@@ -57,6 +57,7 @@
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "Main";
             this.Text = "IQC System";
+            this.WindowState = System.Windows.Forms.FormWindowState.Maximized;
             ((System.ComponentModel.ISupportInitialize)(this.webView21)).EndInit();
             this.ResumeLayout(false);
 

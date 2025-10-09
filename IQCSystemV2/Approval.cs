@@ -91,6 +91,7 @@ namespace IQCSystemV2
                     // Wait until DOM is ready
                     (async () => {
                         console.log('IQC Check Result Maint loaded');
+                        let employeeNumber = JSON.parse(localStorage.getItem(""user"")).EmpNo;
 
                         let btn = document.getElementById('cmdSubmit');
                         let lotValue = document.getElementById('txtIqcLotQuery').value;
@@ -103,7 +104,7 @@ namespace IQCSystemV2
                             await approveInspectionData();
                         });
 
-                        let employeeNumber = JSON.parse(localStorage.getItem(""user"")).EmpNo;
+                        
                         async function approveInspectionData() {
                             try {
                                 

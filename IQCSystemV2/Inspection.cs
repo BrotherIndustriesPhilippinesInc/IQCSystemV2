@@ -31,8 +31,6 @@ namespace IQCSystemV2
             Uri emes_link = new Uri("http://" + username + ":" + password + "@10.248.1.10/BIPHMES/FLoginNew.aspx");
             webView21.Source = emes_link;
             this.userID = userID;
-
-            
         }
 
         private async Task SetStorage()
@@ -175,8 +173,8 @@ namespace IQCSystemV2
                     ////////////////////////////// MAIN FUNCTION ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
                     
                     (async () => {
-                        disableSubmitButton()
-                        await getMesName()
+                        disableElements();
+                        await getMesName();
                         
 
                         //Attach events to ALL new buttons
@@ -313,8 +311,9 @@ namespace IQCSystemV2
 
                     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-                    function disableSubmitButton(){
+                    function disableElements(){
                         document.getElementById(""cmdSubmit"").disabled = true;
+                        document.getElementById(""txtCheckUser"").disabled = true;
                     }
 
                     async function getInspectionData() {
@@ -470,6 +469,7 @@ namespace IQCSystemV2
                     Process.Start(startInfo);
                 }
             }
+
             catch (Exception ex)
             {
                 JObject templateGenerationError = new JObject()

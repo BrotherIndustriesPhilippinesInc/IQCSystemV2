@@ -262,7 +262,12 @@ namespace IQC_API.Controllers
                 return NotFound();
             }
 
-            inspectionDetails.Approver = request.Approver;
+            string approverFullName = await _userContext.SystemApproverList
+                    .Where(x => x.EmployeeNumber == request.Approver)
+                    .Select(x => x.FullName)
+                    .FirstOrDefaultAsync();
+
+            inspectionDetails.Approver = approverFullName;
             inspectionDetails.IsApproved = true;
             _context.Entry(inspectionDetails).State = EntityState.Modified;
 

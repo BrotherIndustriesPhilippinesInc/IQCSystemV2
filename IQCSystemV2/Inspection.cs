@@ -83,6 +83,20 @@ namespace IQCSystemV2
                     document.head.appendChild(script);
                 ");
 
+                await webViewFunctions.ExecuteJavascript(@"
+                    // Inject SweetAlert2 CSS
+                    let swalLink = document.createElement('link');
+                    swalLink.rel = 'stylesheet';
+                    swalLink.href = 'https://cdn.jsdelivr.net/npm/sweetalert2@11.25.1/dist/sweetalert2.min.css';
+                    document.head.appendChild(swalLink);
+
+                    // Inject SweetAlert2 JS
+                    let swalScript = document.createElement('script');
+                    swalScript.src = 'https://cdn.jsdelivr.net/npm/sweetalert2@11.25.1/dist/sweetalert2.all.min.js';
+                    document.head.appendChild(swalScript);
+                ");
+
+
                 //LOAD PANELS
                 await webViewFunctions.ExecuteJavascript(@"
                     let div = document.createElement('div');
@@ -175,13 +189,71 @@ namespace IQCSystemV2
                     (async () => {
                         disableElements();
                         await getMesName();
+
+                        const btn = document.getElementById(""cmdSave"");
+                        if (btn) {
+                            btn.onclick = null; // clears any JS-bound handler
+                            btn.removeAttribute(""onclick""); // removes inline one too
+                        }
                         
+                        // Keep original postback if needed
+                        const originalDoPostBack = window.__doPostBack;
+
+                        // Temporarily disable postback during script setup
+                        window.__doPostBack = function() {
+                            console.log(""Postback blocked intentionally by custom script."");
+                            return false;
+                        };
+
 
                         //Attach events to ALL new buttons
-                        document.getElementById(""cmdSave"").addEventListener('click', async function () {
-                            //e.preventDefault();
-                            await insertInspectionData();
+                        document.getElementById(""cmdSave"").addEventListener(""click"", async function (e) {
+                            e.preventDefault(); // stop normal submission first
+
+                            try {
+                                let spvString = document.getElementsByName(""txtSupervisor$ctl00"")[0].value;
+                                if (!spvString) {
+                                    await Swal.fire({
+                                        title: ""Error 😢"",
+                                        text: ""Please input supervisor name."",
+                                        icon: ""error"",
+                                        confirmButtonText: ""OK""
+                                    });
+                                    return;
+                                }
+
+                                const result = await insertInspectionData();
+
+                                await Swal.fire({
+                                    title: ""Inspection Saved! 🎉"",
+                                    text: ""The inspection data has been successfully inserted."",
+                                    icon: ""success"",
+                                    timer: 1000,
+                                    showConfirmButton: false
+                                });
+
+                                console.log(""result"", result);
+
+                                // ✅ restore postback before submission
+                                if (originalDoPostBack) window.__doPostBack = originalDoPostBack;
+
+                                // ✅ now trigger postback manually (ASP.NET-compatible)
+                                __doPostBack('cmdSave', '');
+
+                            } catch (error) {
+                                console.error(""Insert failed:"", error);
+                                Swal.fire({
+                                    title: ""Error 😢"",
+                                    text: ""Failed to insert inspection data. Please try again."",
+                                    icon: ""error"",
+                                    confirmButtonText: ""OK""
+                                });
+                            }
                         });
+                        
+
+
+
 
                         items = await getAllItems();
                         console.log(""Got items:"", items);
@@ -313,7 +385,7 @@ namespace IQCSystemV2
 
                     function disableElements(){
                         document.getElementById(""cmdSubmit"").disabled = true;
-                        document.getElementById(""txtCheckUser"").disabled = true;
+                        document.getElementById(""txtCheckUser"").readOnly = true;
                     }
 
                     async function getInspectionData() {

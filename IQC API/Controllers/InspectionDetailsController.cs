@@ -113,7 +113,11 @@ namespace IQC_API.Controllers
                         x => x.Supervisor,
                         x => x.Approver,
                         x => x.PartName,
-                        x => x.LotJudge
+                        x => x.LotJudge,
+
+                        x => x.StockInCollectDate,
+                        x => x.LotNo,
+                        x => x.Remarks
                     })
                     .ApplyOrdering(request);
 
@@ -134,7 +138,11 @@ namespace IQC_API.Controllers
                         CheckUser = x.CheckUser,
                         Supervisor = x.Supervisor,
                         Approver = x.Approver,
-                        LotJudge = x.LotJudge
+                        LotJudge = x.LotJudge,
+
+                        StockInCollectDate = x.StockInCollectDate,
+                        LotNo = x.LotNo,
+                        Remarks = x.Remarks
                     })
                     .ToList();
 
@@ -330,7 +338,16 @@ namespace IQC_API.Controllers
                 existing.DesignNoticeNo = inspectionDetails.DesignNoticeNo;
                 existing.FirstAppearance = inspectionDetails.FirstAppearance;
                 existing.SecondAppearance = inspectionDetails.SecondAppearance;
-                existing.ActualCheckTime = inspectionDetails.ActualCheckTime;
+                // If both old and new values exist, append them with a comma (or line break)
+                if (!string.IsNullOrWhiteSpace(existing.ActualCheckTime) &&
+                    !string.IsNullOrWhiteSpace(inspectionDetails.ActualCheckTime))
+                {
+                    existing.ActualCheckTime = $"{existing.ActualCheckTime}, {inspectionDetails.ActualCheckTime}";
+                }
+                else if (string.IsNullOrWhiteSpace(existing.ActualCheckTime))
+                {
+                    existing.ActualCheckTime = inspectionDetails.ActualCheckTime;
+                }
                 existing.FourMNumber = inspectionDetails.FourMNumber;
                 existing.Remarks = inspectionDetails.Remarks;
                 existing.OutgoingInspectionReport = inspectionDetails.OutgoingInspectionReport;

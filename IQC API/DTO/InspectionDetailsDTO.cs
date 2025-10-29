@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using IQC_API.Models;
+using System.ComponentModel.DataAnnotations;
 
 namespace IQC_API.DTO
 {
@@ -110,5 +111,7 @@ namespace IQC_API.DTO
         public bool IsApproved { get; set; }
 
         public string? Approver { get; set; }
+
+        public string VendorSupplierMerged { get; set; }
     }
 }

@@ -3,6 +3,7 @@ using System;
 using IQC_API.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace IQC_API.Migrations
 {
     [DbContext(typeof(IQC_API_PG_Context))]
-    partial class IQC_API_PG_ContextModelSnapshot : ModelSnapshot
+    [Migration("20251027000631_AddPartsinformation")]
+    partial class AddPartsinformation
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -233,9 +236,11 @@ namespace IQC_API.Migrations
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Category")
+                        .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("CommonGroup")
+                    b.Property<string>("Classification")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("CreatedBy")
@@ -246,111 +251,102 @@ namespace IQC_API.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("CriticalComponentSafety")
-                        .HasColumnType("text");
-
-                    b.Property<string>("DimensionTT")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("EOL")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("EOLDate")
-                        .HasColumnType("text");
-
-                    b.Property<string>("FutureInspectionStatus")
-                        .HasColumnType("text");
-
-                    b.Property<string>("InspectionStatus")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("JIT")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<DateTime>("LastUpdate")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("Markings")
+                    b.Property<string>("Marking")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("Model")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("ModelCategory")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("N1N2")
-                        .HasColumnType("text");
-
-                    b.Property<string>("N_Z")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("OverseasManufacturer")
+                        .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("PSMark")
+                    b.Property<string>("PSMarking")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("PartCode")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("PartName")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("Plant")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("QMLotCategory")
-                        .HasColumnType("text");
-
-                    b.Property<string>("QM_Lot_Category")
-                        .HasColumnType("text");
-
-                    b.Property<string>("QualityLevel")
-                        .HasColumnType("text");
-
-                    b.Property<string>("Reference_STS_Checking")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("Remarks")
-                        .HasColumnType("text");
-
-                    b.Property<string>("SAPMasterRegistration")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("SFCategory")
-                        .HasColumnType("text");
-
-                    b.Property<string>("STS_N1")
-                        .HasColumnType("text");
-
-                    b.Property<string>("STS_Normal_N1")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("Size")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("Sloc")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("StandardTaktTime")
+                        .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("SupplierData")
+                    b.Property<string>("Status")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("SupplierName")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("UpdatedBy")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("VendorCode")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("VisualDimension")
-                        .HasColumnType("text");
-
-                    b.Property<string>("VisualTT")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.HasKey("Id");

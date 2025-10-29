@@ -11,6 +11,7 @@ using IQC_API.DTO;
 using System.Linq.Dynamic.Core;
 using IQC_API.Functions;
 using System.Linq.Expressions;
+using DataTableRequest = IQC_API.Functions.DataTableRequest;
 
 namespace IQC_API.Controllers
 {
@@ -103,51 +104,102 @@ namespace IQC_API.Controllers
             {
                 var baseQuery = _context.InspectionDetails.AsQueryable();
 
-                // Apply modular filters
+                // Apply search and ordering
                 var query = baseQuery
                     .ApplySearch(request, new Expression<Func<InspectionDetails, object>>[]
                     {
-                        x => x.CheckLot,
-                        x => x.PartCode,
-                        x => x.CheckUser,
-                        x => x.Supervisor,
-                        x => x.Approver,
-                        x => x.PartName,
-                        x => x.LotJudge,
-
-                        x => x.StockInCollectDate,
-                        x => x.LotNo,
-                        x => x.Remarks
+                x => x.CheckLot,
+                x => x.PartCode,
+                x => x.PartName,
+                x => x.FactoryCode,
+                x => x.IQCCheckDate,
+                x => x.Remarks,
+                x => x.CreatedBy,
+                x => x.Approver
                     })
                     .ApplyOrdering(request);
-
 
                 var totalRecords = _context.InspectionDetails.Count();
                 var filteredRecords = query.Count();
 
+                // Apply paging before loading to memory
                 var pagedQuery = query.ApplyPaging(request);
 
+                // Get all part codes from the current page to avoid unnecessary lookups
+                var partCodes = pagedQuery.Select(x => x.PartCode).Distinct().ToList();
+
+                // Fetch all parts info for these codes in one go
+                var partsInfo = _context.PartsInformation
+                    .Where(p => partCodes.Contains(p.PartCode))
+                    .AsEnumerable() // 👈 Switch to client-side processing here
+                    .GroupBy(p => p.PartCode)
+                    .Select(g => new
+                    {
+                        PartCode = g.Key,
+                        VendorSupplierMerged = string.Join(
+                            "\n",
+                            g.Select((x, i) => $"{i + 1}. {x.VendorCode} -> ({x.SupplierName})")
+                        )
+                    })
+                    .ToDictionary(g => g.PartCode, g => g.VendorSupplierMerged);
+
+
+                // Build data for DataTables
                 var data = pagedQuery
+                    .AsEnumerable()
                     .Select(x => new InspectionDetailsNoMESDataDTO
                     {
                         Id = x.Id,
                         CheckLot = x.CheckLot,
-                        PartCode = x.PartCode,
-                        PartName = x.PartName,
-                        IQCCheckDate = x.IQCCheckDate,
-                        CheckUser = x.CheckUser,
-                        Supervisor = x.Supervisor,
-                        Approver = x.Approver,
-                        LotJudge = x.LotJudge,
-
+                        DimenstionsMaxSamplingCheckQty = x.DimenstionsMaxSamplingCheckQty,
+                        ContinuedEligibility = x.ContinuedEligibility,
+                        RelatedCheckLot = x.RelatedCheckLot,
                         StockInCollectDate = x.StockInCollectDate,
+                        PartCode = x.PartCode,
+                        SamplingCheckQty = x.SamplingCheckQty,
+                        FactoryCode = x.FactoryCode,
+                        PartName = x.PartName,
+                        AllowQty = x.AllowQty,
+                        Standard = x.Standard,
+                        TotalLotQty = x.TotalLotQty,
+                        SamplingRejectQty = x.SamplingRejectQty,
+                        IQCCheckDate = x.IQCCheckDate,
+                        ClassOne = x.ClassOne,
+                        SamplingCheckDefectiveQty = x.SamplingCheckDefectiveQty,
+                        LotJudge = x.LotJudge,
+                        OccuredEngineer = x.OccuredEngineer,
+                        CheckMonitor = x.CheckMonitor,
                         LotNo = x.LotNo,
-                        Remarks = x.Remarks
+                        ClassTwo = x.ClassTwo,
+                        RejectQty = x.RejectQty,
+                        ProcessMethod = x.ProcessMethod,
+                        CheckUser = x.CheckUser,
+                        ProficienceLevel = x.ProficienceLevel,
+                        FirstSize = x.FirstSize,
+                        SecondSize = x.SecondSize,
+                        Supervisor = x.Supervisor,
+                        ModelNo = x.ModelNo,
+                        DesignNoticeNo = x.DesignNoticeNo,
+                        FirstAppearance = x.FirstAppearance,
+                        SecondAppearance = x.SecondAppearance,
+                        ActualCheckTime = x.ActualCheckTime,
+                        FourMNumber = x.FourMNumber,
+                        Remarks = x.Remarks,
+                        OutgoingInspectionReport = x.OutgoingInspectionReport,
+                        ThreeCDataConfirm = x.ThreeCDataConfirm,
+                        CreatedBy = x.CreatedBy,
+                        CreatedDate = x.CreatedDate,
+                        IsApproved = x.IsApproved,
+                        Approver = x.Approver,
+                        // 🧩 Merge multiple vendor/supplier rows into one cell
+                        VendorSupplierMerged = partsInfo.ContainsKey(x.PartCode)
+                            ? partsInfo[x.PartCode]
+                            : ""
                     })
                     .ToList();
 
-
-                var response = new DataTableResponse<InspectionDetailsNoMESDataDTO>
+                // Wrap response
+                var response = new Functions.DataTableResponse<InspectionDetailsNoMESDataDTO>
                 {
                     Draw = request.Draw,
                     RecordsTotal = totalRecords,
@@ -167,6 +219,7 @@ namespace IQC_API.Controllers
                 });
             }
         }
+
 
         // GET: api/InspectionDetails
         [HttpGet("supervisor/{supervisorName}")]
@@ -338,16 +391,7 @@ namespace IQC_API.Controllers
                 existing.DesignNoticeNo = inspectionDetails.DesignNoticeNo;
                 existing.FirstAppearance = inspectionDetails.FirstAppearance;
                 existing.SecondAppearance = inspectionDetails.SecondAppearance;
-                // If both old and new values exist, append them with a comma (or line break)
-                if (!string.IsNullOrWhiteSpace(existing.ActualCheckTime) &&
-                    !string.IsNullOrWhiteSpace(inspectionDetails.ActualCheckTime))
-                {
-                    existing.ActualCheckTime = $"{existing.ActualCheckTime}, {inspectionDetails.ActualCheckTime}";
-                }
-                else if (string.IsNullOrWhiteSpace(existing.ActualCheckTime))
-                {
-                    existing.ActualCheckTime = inspectionDetails.ActualCheckTime;
-                }
+                existing.ActualCheckTime = inspectionDetails.ActualCheckTime;
                 existing.FourMNumber = inspectionDetails.FourMNumber;
                 existing.Remarks = inspectionDetails.Remarks;
                 existing.OutgoingInspectionReport = inspectionDetails.OutgoingInspectionReport;

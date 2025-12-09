@@ -49,7 +49,7 @@ namespace IQCSystemV2
             Dictionary<string, string> post = new Dictionary<string, string> {
                 { "id_number", this.userID.ToString() }
             };
-            JObject data = await apiHandler.APIPostCall("http://apbiphbpsts01:8080/homs/api/user/getUser.php", post);
+            JObject data = await apiHandler.APIPostCall("http://apbiphbpswb02/homs/api/user/getUser.php", post);
 
             await webViewFunctions.ExecuteJavascript($"localStorage.setItem(\"user\", JSON.stringify({data["data"]}));");
         }

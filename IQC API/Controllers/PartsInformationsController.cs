@@ -274,13 +274,19 @@ namespace IQC_API.Controllers
         public async Task<ActionResult<IEnumerable<object>>> DistinctVendorCode()
         {
             var results = await _context.PartsInformation
-                .Where(x => x.VendorCode != null && x.SupplierName != null) // optional: exclude nulls
-                .Select(x => new { x.VendorCode, x.SupplierName })
-                .Distinct()
+                .Where(x => x.VendorCode != null
+                         && x.SupplierName != null
+                         && x.VendorCode != "N/A")
+                .GroupBy(x => x.VendorCode)
+                .Select(g => new
+                {
+                    VendorCode = g.Key,
+                    SupplierName = g.First().SupplierName
+                })
+                .OrderBy(x => x.SupplierName)
                 .ToListAsync();
 
             return results;
         }
-
     }
 }

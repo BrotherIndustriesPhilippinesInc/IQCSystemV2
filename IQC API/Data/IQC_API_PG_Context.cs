@@ -18,5 +18,7 @@ namespace IQC_API.Data
 
         public DbSet<IQC_API.Models.Accounts> Accounts { get; set; } = default!;
         public DbSet<IQC_API.Models.PartsInformation> PartsInformation { get; set; } = default!;
+
+        public DbSet<IQC_API.Models.SystemModel> System { get; set; } = default!;
     }
 }

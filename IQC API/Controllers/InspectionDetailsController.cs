@@ -223,14 +223,14 @@ namespace IQC_API.Controllers
 
         // GET: api/InspectionDetails
         [HttpGet("supervisor/{supervisorName}")]
-        public async Task<ActionResult<IEnumerable<InspectionDetails>>> GetInspectionDetails([FromRoute] string supervisorName)
+        public async Task<ActionResult<IEnumerable<InspectionDetailsNoMESDataDTO>>> GetInspectionDetails([FromRoute] string supervisorName)
         {
             List<InspectionDetails> inspections;
 
             if (supervisorName != "Marc Racille Arenga")
             {
                 inspections = await _context.InspectionDetails
-                    .Where(x => /*x.Supervisor == supervisorName &&*/ x.IsApproved == false)
+                    .Where(x => /* x.Supervisor == supervisorName && */ x.IsApproved == false)
                     .ToListAsync();
             }
             else
@@ -240,8 +240,73 @@ namespace IQC_API.Controllers
                     .ToListAsync();
             }
 
-            return Ok(inspections);
+            // Get all part codes to fetch vendor/supplier info
+            var partCodes = inspections.Select(x => x.PartCode).Distinct().ToList();
+
+            var partsInfo = await _context.PartsInformation
+                .Where(p => partCodes.Contains(p.PartCode))
+                .ToListAsync(); // keep it async
+
+            var partsInfoDict = partsInfo
+                .GroupBy(p => p.PartCode)
+                .ToDictionary(
+                    g => g.Key,
+                    g => string.Join("\n", g.Select((x, i) => $"{i + 1}. {x.VendorCode} -> ({x.SupplierName})"))
+                );
+
+            // Map InspectionDetails -> DTO
+            var data = inspections.Select(x => new InspectionDetailsNoMESDataDTO
+            {
+                Id = x.Id,
+                CheckLot = x.CheckLot,
+                DimenstionsMaxSamplingCheckQty = x.DimenstionsMaxSamplingCheckQty,
+                ContinuedEligibility = x.ContinuedEligibility,
+                RelatedCheckLot = x.RelatedCheckLot,
+                StockInCollectDate = x.StockInCollectDate,
+                PartCode = x.PartCode,
+                SamplingCheckQty = x.SamplingCheckQty,
+                FactoryCode = x.FactoryCode,
+                PartName = x.PartName,
+                AllowQty = x.AllowQty,
+                Standard = x.Standard,
+                TotalLotQty = x.TotalLotQty,
+                SamplingRejectQty = x.SamplingRejectQty,
+                IQCCheckDate = x.IQCCheckDate,
+                ClassOne = x.ClassOne,
+                SamplingCheckDefectiveQty = x.SamplingCheckDefectiveQty,
+                LotJudge = x.LotJudge,
+                OccuredEngineer = x.OccuredEngineer,
+                CheckMonitor = x.CheckMonitor,
+                LotNo = x.LotNo,
+                ClassTwo = x.ClassTwo,
+                RejectQty = x.RejectQty,
+                ProcessMethod = x.ProcessMethod,
+                CheckUser = x.CheckUser,
+                ProficienceLevel = x.ProficienceLevel,
+                FirstSize = x.FirstSize,
+                SecondSize = x.SecondSize,
+                Supervisor = x.Supervisor,
+                ModelNo = x.ModelNo,
+                DesignNoticeNo = x.DesignNoticeNo,
+                FirstAppearance = x.FirstAppearance,
+                SecondAppearance = x.SecondAppearance,
+                ActualCheckTime = x.ActualCheckTime,
+                FourMNumber = x.FourMNumber,
+                Remarks = x.Remarks,
+                OutgoingInspectionReport = x.OutgoingInspectionReport,
+                ThreeCDataConfirm = x.ThreeCDataConfirm,
+                CreatedBy = x.CreatedBy,
+                CreatedDate = x.CreatedDate,
+                IsApproved = x.IsApproved,
+                Approver = x.Approver,
+                VendorSupplierMerged = partsInfoDict.ContainsKey(x.PartCode)
+                    ? partsInfoDict[x.PartCode]
+                    : ""
+            }).ToList();
+
+            return Ok(data);
         }
+
 
 
         // GET: api/InspectionDetails/5

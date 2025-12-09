@@ -41,7 +41,7 @@ namespace IQCSystemV2.Functions
 
             generalWIDirectory = "\\\\apbiphsh04\\41_PQCDept\\41a_IQC\\04 Inspection\\0000 OPEN Tool System\\10 General Work I";
 
-            serverResourceDirectory = "\\\\apbiphbpsts01\\htdocs\\iqc\\resources\\";
+            serverResourceDirectory = "\\\\apbiphiqcwb01\\htdocs\\iqcv2\\resources\\open_tool\\";
         }
 
         public Task<JObject> ReturnAllAsync()
@@ -199,6 +199,7 @@ namespace IQCSystemV2.Functions
             {
                 // Consider logging the error
                 Console.WriteLine($"Error processing files: {ex.Message}");
+                MessageBox.Show($"Error processing files: {ex.Message}");
             }
 
             return result;

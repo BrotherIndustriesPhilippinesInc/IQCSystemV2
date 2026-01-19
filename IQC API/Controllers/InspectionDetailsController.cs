@@ -123,7 +123,9 @@ namespace IQC_API.Controllers
                 var filteredRecords = query.Count();
 
                 // Apply paging before loading to memory
-                var pagedQuery = query.ApplyPaging(request);
+                int pageSize = request.Length < 0 ? int.MaxValue : request.Length;
+
+                var pagedQuery = query.Skip(request.Start).Take(pageSize);
 
                 // Get all part codes from the current page to avoid unnecessary lookups
                 var partCodes = pagedQuery.Select(x => x.PartCode).Distinct().ToList();
@@ -220,7 +222,6 @@ namespace IQC_API.Controllers
             }
         }
 
-
         // GET: api/InspectionDetails
         [HttpGet("supervisor/{supervisorName}")]
         public async Task<ActionResult<IEnumerable<InspectionDetailsNoMESDataDTO>>> GetInspectionDetails([FromRoute] string supervisorName)
@@ -306,8 +307,6 @@ namespace IQC_API.Controllers
 
             return Ok(data);
         }
-
-
 
         // GET: api/InspectionDetails/5
         [HttpGet("{id}")]
@@ -412,7 +411,6 @@ namespace IQC_API.Controllers
             return NoContent();
         }
 
-
         // POST: api/InspectionDetails
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
@@ -482,7 +480,6 @@ namespace IQC_API.Controllers
                     new { id = inspectionDetails.Id }, inspectionDetails);
             }
         }
-
 
         // DELETE: api/InspectionDetails/5
         [HttpDelete("{id}")]

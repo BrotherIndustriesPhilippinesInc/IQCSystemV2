@@ -105,44 +105,59 @@ namespace IQC_API.Controllers
             return _context.InspectionDetails.Any(e => e.Id == id);
         }
 
+        private IQueryable<InspectionDetails> InspectionBaseQuery =>
+        _context.InspectionDetails
+        .Select(x => new InspectionDetails
+        {
+            Id = x.Id,
+            IQCCheckDate = x.IQCCheckDate,
+            IsApproved = x.IsApproved,
+            CheckUser = x.CheckUser
+        });
+
+
         [HttpGet("inspection-summary")]
-        public IActionResult InspectionSummary([FromQuery] DateTime? startDate, [FromQuery] DateTime? endDate)
+        public IActionResult InspectionSummary(DateTime? startDate, DateTime? endDate)
         {
             try
             {
-                var allData = _context.InspectionDetails
-                                      .Where(x => !string.IsNullOrEmpty(x.IQCCheckDate))
-                                      .AsEnumerable()
-                                      .ToList();
+                // Step 1: SQL filtering only on non-empty strings
+                var raw = InspectionBaseQuery
+                    .Where(x => x.IQCCheckDate != null && x.IQCCheckDate != "")
+                    .ToList(); // now allowed to parse in memory
 
-                // Filter by date safely
-                var filtered = allData.Where(x =>
-                {
-                    if (!DateTime.TryParse(x.IQCCheckDate, out var date))
-                        return false; // skip invalid dates
-
-                    return (!startDate.HasValue || date >= startDate.Value) &&
-                           (!endDate.HasValue || date <= endDate.Value);
-                }).ToList();
-
-                var totalInspections = filtered.Count;
-
-                var dailyTrends = filtered
-                    .GroupBy(x => DateTime.Parse(x.IQCCheckDate).Date)
-                    .Select(g => new
+                // Step 2: Safe parse in memory
+                var parsed = raw
+                    .Select(x =>
                     {
-                        Date = g.Key,
-                        TotalInspections = g.Count()
+                        if (!DateTime.TryParse(x.IQCCheckDate, out var dt))
+                            return null;
+
+                        return new { Date = dt.Date };
                     })
-                    .OrderBy(x => x.Date)
+                    .Where(x => x != null)
                     .ToList();
+
+                // Step 3: Filter by date
+                if (startDate.HasValue)
+                    parsed = parsed.Where(x => x.Date >= startDate.Value.Date).ToList();
+
+                if (endDate.HasValue)
+                    parsed = parsed.Where(x => x.Date <= endDate.Value.Date).ToList();
 
                 return Ok(new
                 {
-                    TotalInspections = totalInspections,
+                    TotalInspections = parsed.Count,
                     StartDate = startDate,
                     EndDate = endDate,
-                    DailyTrends = dailyTrends
+                    DailyTrends = parsed
+                        .GroupBy(x => x.Date)
+                        .Select(g => new
+                        {
+                            Date = g.Key,
+                            TotalInspections = g.Count()
+                        })
+                        .OrderBy(x => x.Date)
                 });
             }
             catch (Exception ex)
@@ -152,52 +167,51 @@ namespace IQC_API.Controllers
         }
 
         [HttpGet("approval-summary")]
-        public IActionResult ApprovalSummary([FromQuery] DateTime? startDate, [FromQuery] DateTime? endDate)
+        public IActionResult ApprovalSummary(DateTime? startDate, DateTime? endDate)
         {
             try
             {
-                // Start query in the database
-                var query = _context.InspectionDetails.AsQueryable();
-
-                // Only include rows with valid date strings
-                query = query.Where(x => !string.IsNullOrEmpty(x.IQCCheckDate));
-
-                // Convert and filter in memory (since IQCCheckDate is a string)
-                var data = query.AsEnumerable()
-                                .Where(x => DateTime.TryParse(x.IQCCheckDate, out _))
-                                .Select(x => new
-                                {
-                                    IsApproved = x.IsApproved,
-                                    IQCDate = DateTime.Parse(x.IQCCheckDate).Date
-                                })
-                                .Where(x =>
-                                    (!startDate.HasValue || x.IQCDate >= startDate.Value.Date) &&
-                                    (!endDate.HasValue || x.IQCDate <= endDate.Value.Date))
-                                .ToList();
-
-                // Totals
-                var totalInspections = data.Count;
-                var approvedCount = data.Count(x => x.IsApproved == true);
-
-                // Daily group
-                var dailyTrends = data
-                    .GroupBy(x => x.IQCDate)
-                    .Select(g => new
-                    {
-                        Date = g.Key,
-                        TotalInspections = g.Count(),
-                        ApprovedCount = g.Count(x => x.IsApproved == true)
-                    })
-                    .OrderBy(x => x.Date)
+                // Only light columns loaded
+                var raw = InspectionBaseQuery
+                    .Where(x => x.IQCCheckDate != null && x.IQCCheckDate != "")
                     .ToList();
+
+                var parsed = raw
+                    .Select(x =>
+                    {
+                        if (!DateTime.TryParse(x.IQCCheckDate, out var dt))
+                            return null;
+
+                        return new
+                        {
+                            x.IsApproved,
+                            Date = dt.Date
+                        };
+                    })
+                    .Where(x => x != null)
+                    .ToList();
+
+                if (startDate.HasValue)
+                    parsed = parsed.Where(x => x.Date >= startDate.Value.Date).ToList();
+
+                if (endDate.HasValue)
+                    parsed = parsed.Where(x => x.Date <= endDate.Value.Date).ToList();
 
                 return Ok(new
                 {
-                    TotalInspections = totalInspections,
-                    ApprovedCount = approvedCount,
+                    TotalInspections = parsed.Count,
+                    ApprovedCount = parsed.Count(x => x.IsApproved),
                     StartDate = startDate,
                     EndDate = endDate,
-                    DailyTrends = dailyTrends
+                    DailyTrends = parsed
+                        .GroupBy(x => x.Date)
+                        .Select(g => new
+                        {
+                            Date = g.Key,
+                            TotalInspections = g.Count(),
+                            ApprovedCount = g.Count(z => z.IsApproved)
+                        })
+                        .OrderBy(x => x.Date)
                 });
             }
             catch (Exception ex)
@@ -207,30 +221,35 @@ namespace IQC_API.Controllers
         }
 
         [HttpGet("members")]
-        public async Task<ActionResult<IEnumerable<object>>> GetInspectionMembers(
-            [FromQuery] DateTime? startDate,
-            [FromQuery] DateTime? endDate)
+        public IActionResult GetInspectionMembers(DateTime? startDate, DateTime? endDate)
         {
-            // Fetch safely
-            var inspections = _context.InspectionDetails
-                .Where(x => !string.IsNullOrEmpty(x.IQCCheckDate))
-                .AsEnumerable() // everything after this runs in-memory
+            var raw = InspectionBaseQuery
+                .Where(x => x.IQCCheckDate != null && x.IQCCheckDate != "")
+                .Where(x => x.CheckUser != null && x.CheckUser != "")
+                .ToList();
+
+            var parsed = raw
                 .Select(x =>
                 {
-                    if (DateTime.TryParse(x.IQCCheckDate, out var dt))
-                        return new { x.CheckUser, IQCDate = dt.Date };
-                    return null; // skip invalid dates
+                    if (!DateTime.TryParse(x.IQCCheckDate, out var dt))
+                        return null;
+
+                    return new
+                    {
+                        x.CheckUser,
+                        Date = dt.Date
+                    };
                 })
-                .Where(x => x != null); 
+                .Where(x => x != null)
+                .ToList();
 
-            // Apply date range filter
             if (startDate.HasValue)
-                inspections = inspections.Where(x => x.IQCDate >= startDate.Value.Date);
-            if (endDate.HasValue)
-                inspections = inspections.Where(x => x.IQCDate <= endDate.Value.Date);
+                parsed = parsed.Where(x => x.Date >= startDate.Value.Date).ToList();
 
-            // Group by user and count
-            var inspectionCounts = inspections
+            if (endDate.HasValue)
+                parsed = parsed.Where(x => x.Date <= endDate.Value.Date).ToList();
+
+            var grouped = parsed
                 .GroupBy(x => x.CheckUser)
                 .Select(g => new
                 {
@@ -240,7 +259,8 @@ namespace IQC_API.Controllers
                 .OrderBy(x => x.User)
                 .ToList();
 
-            return Ok(inspectionCounts);
+            return Ok(grouped);
         }
+
     }
 }

@@ -8,5 +8,9 @@ namespace IQC_API.DTO
 
         public required string MesName { get; set; }
 
+        public required bool IsAdmin { get; set; }
+
+        public string? Theme { get; set; }
+
     }
 }

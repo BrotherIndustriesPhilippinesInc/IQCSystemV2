@@ -26,7 +26,6 @@ namespace IQC_API.Controllers
         }
 
         // GET: api/SystemApproverLists
-
         [HttpGet]
         public async Task<ActionResult<IEnumerable<object>>> GetSystemApproverList()
         {
@@ -56,7 +55,8 @@ namespace IQC_API.Controllers
                              approver.EmployeeNumber,
                              approver.ADID,
                              // Accounts info
-                             MesName = account != null ? account.MesName : null
+                             MesName = account != null ? account.MesName : null,
+                             IsAdmin = account != null ? account.IsAdmin : false
                          };
 
             return Ok(result);
@@ -81,7 +81,6 @@ namespace IQC_API.Controllers
 
             return Ok(iqcUser);
         }
-
 
         // GET: api/SystemApproverLists/5
         [HttpGet("{id}")]
@@ -108,12 +107,12 @@ namespace IQC_API.Controllers
                 approver.EmployeeNumber,
                 approver.ADID,
                 // Postgres Accounts info
-                MesName = account != null ? account.MesName : null
+                MesName = account != null ? account.MesName : null,
+                IsAdmin = account != null ? account.IsAdmin : false
             };
 
             return Ok(result);
         }
-
 
         // PUT: api/SystemApproverLists/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
@@ -188,7 +187,8 @@ namespace IQC_API.Controllers
             var iqcAccounts = new Accounts
             {
                 AccountId = newId,
-                MesName = dto.MesName
+                MesName = dto.MesName,
+                IsAdmin = dto.IsAdmin
             };
 
             try
@@ -216,7 +216,6 @@ namespace IQC_API.Controllers
 
             return CreatedAtAction("GetSystemApproverList", new { id = systemApproverList.Id }, systemApproverList);
         }
-
 
         // DELETE: api/SystemApproverLists/5
         public class DeleteApproverRequest
@@ -251,10 +250,6 @@ namespace IQC_API.Controllers
             return Ok(new { status = 200, message = "User deleted successfully" });
         }
 
-
-
-
-
         private bool SystemApproverListExists(int id)
         {
             return _context.SystemApproverList.Any(e => e.Id == id);
@@ -285,10 +280,31 @@ namespace IQC_API.Controllers
                 approver.EmployeeNumber,
                 approver.ADID,
                 // Postgres Accounts info
-                MesName = account != null ? account.MesName : null
+                MesName = account != null ? account.MesName : null,
+                IsAdmin = account != null ? account.IsAdmin : false,
+                IsSuperAdmin = account != null ? account.IsSuperAdmin : false
             };
 
             return Ok(result);
+        }
+
+        [HttpPost("UpdateEmployee/{id}")]
+        public async Task<ActionResult<object>> UpdateEmployee(int id, [FromBody] SystemApproverListDTOPost dto)
+        {
+            // Look for the Postgres account
+            var account = await _pgContext.Accounts
+                .FirstOrDefaultAsync(a => a.AccountId == id);
+
+            if (account == null)
+                return NotFound("Account not found in Postgres.");
+
+            // Update only Postgres fields
+            account.MesName = dto.MesName;
+            account.IsAdmin = dto.IsAdmin;
+
+            await _pgContext.SaveChangesAsync();
+
+            return Ok(new { id = id });
         }
     }
 }

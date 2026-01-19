@@ -133,9 +133,13 @@ namespace IQCSystemV2
             Dictionary<string, string> post = new Dictionary<string, string> {
                 { "id_number", UserIdNumber.ToString() }
             };
+
             JObject data = await apiHandler.APIPostCall("http://apbiphbpswb02/homs/api/user/getUser.php", post);
 
             await webViewFunctions.ExecuteJavascript($"localStorage.setItem(\"user\", JSON.stringify({data["data"]}));");
+
+            //JObject auth = await apiHandler.APIGetCall($"https://localhost:7246/api/SystemApproverLists/ViaEmployeeNumber/{UserIdNumber}");
+            //await webViewFunctions.ExecuteJavascript($"localStorage.setItem(\"auth\", JSON.stringify({auth}));");
         }
 
         private void maximize_Click(object sender, EventArgs e)

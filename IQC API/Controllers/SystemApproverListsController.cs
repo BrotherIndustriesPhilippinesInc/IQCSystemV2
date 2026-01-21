@@ -56,7 +56,7 @@ namespace IQC_API.Controllers
                              approver.ADID,
                              // Accounts info
                              MesName = account != null ? account.MesName : null,
-                             IsAdmin = account != null ? account.IsAdmin : false
+                             IsAdmin = account != null ? account.IsAdmin : false,
                          };
 
             return Ok(result);

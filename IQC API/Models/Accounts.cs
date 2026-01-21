@@ -16,5 +16,7 @@ namespace IQC_API.Models
         public bool IsSuperAdmin { get; set; } = false;
 
         public string? Theme { get; set; } = "#005CAB";
+
+        public string? FontColor { get; set; } = "#FFFFFF";
     }
 }

@@ -3,6 +3,7 @@ using System;
 using IQC_API.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace IQC_API.Migrations
 {
     [DbContext(typeof(IQC_API_PG_Context))]
-    partial class IQC_API_PG_ContextModelSnapshot : ModelSnapshot
+    [Migration("20260119052458_AddFontColor")]
+    partial class AddFontColor
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -51,7 +54,7 @@ namespace IQC_API.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Accounts", (string)null);
+                    b.ToTable("Accounts");
                 });
 
             modelBuilder.Entity("IQC_API.Models.InspectionDetails", b =>
@@ -233,7 +236,7 @@ namespace IQC_API.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("InspectionDetails", (string)null);
+                    b.ToTable("InspectionDetails");
                 });
 
             modelBuilder.Entity("IQC_API.Models.PartsInformation", b =>
@@ -367,7 +370,7 @@ namespace IQC_API.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("PartsInformation", (string)null);
+                    b.ToTable("PartsInformation");
                 });
 
             modelBuilder.Entity("IQC_API.Models.SystemModel", b =>
@@ -384,7 +387,7 @@ namespace IQC_API.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("System", (string)null);
+                    b.ToTable("System");
                 });
 #pragma warning restore 612, 618
         }

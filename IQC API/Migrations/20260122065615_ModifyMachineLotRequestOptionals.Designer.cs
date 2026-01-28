@@ -3,6 +3,7 @@ using System;
 using IQC_API.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace IQC_API.Migrations
 {
     [DbContext(typeof(IQC_API_PG_Context))]
-    partial class IQC_API_PG_ContextModelSnapshot : ModelSnapshot
+    [Migration("20260122065615_ModifyMachineLotRequestOptionals")]
+    partial class ModifyMachineLotRequestOptionals
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -279,10 +282,6 @@ namespace IQC_API.Migrations
                     b.Property<int>("ReleaseReasonId")
                         .HasColumnType("integer");
 
-                    b.Property<string>("Remarks")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.Property<string>("VendorName")
                         .IsRequired()
                         .HasColumnType("text");
@@ -508,15 +507,15 @@ namespace IQC_API.Migrations
                     b.Property<DateTime?>("ModifiedDate")
                         .HasColumnType("timestamp without time zone");
 
-                    b.Property<string>("WhatForCode")
+                    b.Property<string>("whatForCode")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("WhatForDetails")
+                    b.Property<string>("whatForDetails")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("WhatForName")
+                    b.Property<string>("whatForName")
                         .IsRequired()
                         .HasColumnType("text");
 

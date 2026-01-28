@@ -106,15 +106,22 @@ namespace IQCSystemV2
                                 <button id=""back"" class=""btn btn-warning"" onclick=""back()"">Back</button>
                             </div>
 
-                            <div class=""d-flex gap-2 mt-2"">
-                                <button id=""threeD"" class=""btn btn-primary"">3D</button>
-                                <button id=""twoD"" class=""btn btn-primary"">2D</button>
-                                <button id=""wi"" class=""btn btn-primary"">Work Instructions</button>
-                                <button id=""artwork"" class=""btn btn-primary"">Artwork</button>
-                                <button id=""dci"" class=""btn btn-primary"">DCI</button>
-                                <button id=""ng"" class=""btn btn-primary"">NG Illustration</button>
-                                <button id=""qhc"" class=""btn btn-primary"">Quality History Card</button>
-                                <button id=""generalWI"" class=""btn btn-primary"">General Work Instructions</button>
+                            <div class=""d-flex gap-2 mt-2 justify-content-around"">
+                                <div> 
+                                    <button id=""threeD"" class=""btn btn-primary"">3D</button>
+                                    <button id=""twoD"" class=""btn btn-primary"">2D</button>
+                                    <button id=""wi"" class=""btn btn-primary"">Work Instructions</button>
+                                    <button id=""artwork"" class=""btn btn-primary"">Artwork</button>
+                                    <button id=""dci"" class=""btn btn-primary"">DCI</button>
+                                    <button id=""ng"" class=""btn btn-primary"">NG Illustration</button>
+                                    <button id=""qhc"" class=""btn btn-primary"">Quality History Card</button>
+                                    <button id=""generalWI"" class=""btn btn-primary"">General Work Instructions</button>
+                                </div>
+                                <div>
+                                    <button id=""machineLotRequest"" class=""btn btn-primary"" onclick= function() {
+                                    sendToWebView('MachineLotRequest');
+                                };>Machine Lot Request</button>
+                                </div>
                             </div>
                             <div id=""items-container""></div>
                             

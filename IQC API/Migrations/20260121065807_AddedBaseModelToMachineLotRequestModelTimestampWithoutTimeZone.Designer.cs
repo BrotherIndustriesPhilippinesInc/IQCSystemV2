@@ -3,6 +3,7 @@ using System;
 using IQC_API.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace IQC_API.Migrations
 {
     [DbContext(typeof(IQC_API_PG_Context))]
-    partial class IQC_API_PG_ContextModelSnapshot : ModelSnapshot
+    [Migration("20260121065807_AddedBaseModelToMachineLotRequestModelTimestampWithoutTimeZone")]
+    partial class AddedBaseModelToMachineLotRequestModelTimestampWithoutTimeZone
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -276,10 +279,7 @@ namespace IQC_API.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<int>("ReleaseReasonId")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Remarks")
+                    b.Property<string>("ReleaseReason")
                         .IsRequired()
                         .HasColumnType("text");
 
@@ -294,8 +294,6 @@ namespace IQC_API.Migrations
                         .HasColumnType("boolean");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("ReleaseReasonId");
 
                     b.HasIndex("WhatForId");
 
@@ -436,40 +434,6 @@ namespace IQC_API.Migrations
                     b.ToTable("PartsInformation");
                 });
 
-            modelBuilder.Entity("IQC_API.Models.ReleaseReason", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("CreatedBy")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("CreatedDate")
-                        .HasColumnType("timestamp without time zone");
-
-                    b.Property<string>("ModifiedBy")
-                        .HasColumnType("text");
-
-                    b.Property<DateTime?>("ModifiedDate")
-                        .HasColumnType("timestamp without time zone");
-
-                    b.Property<string>("ReleaseReasonCode")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("ReleaseReasonName")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("ReleaseReason");
-                });
-
             modelBuilder.Entity("IQC_API.Models.SystemModel", b =>
                 {
                     b.Property<int>("Id")
@@ -508,15 +472,11 @@ namespace IQC_API.Migrations
                     b.Property<DateTime?>("ModifiedDate")
                         .HasColumnType("timestamp without time zone");
 
-                    b.Property<string>("WhatForCode")
+                    b.Property<string>("whatForCode")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("WhatForDetails")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("WhatForName")
+                    b.Property<string>("whatForName")
                         .IsRequired()
                         .HasColumnType("text");
 
@@ -527,26 +487,13 @@ namespace IQC_API.Migrations
 
             modelBuilder.Entity("IQC_API.Models.MachineLotRequest", b =>
                 {
-                    b.HasOne("IQC_API.Models.ReleaseReason", "ReleaseReason")
-                        .WithMany("MachineLotRequests")
-                        .HasForeignKey("ReleaseReasonId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("IQC_API.Models.WhatFor", "WhatFor")
                         .WithMany("MachineLotRequests")
                         .HasForeignKey("WhatForId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("ReleaseReason");
-
                     b.Navigation("WhatFor");
-                });
-
-            modelBuilder.Entity("IQC_API.Models.ReleaseReason", b =>
-                {
-                    b.Navigation("MachineLotRequests");
                 });
 
             modelBuilder.Entity("IQC_API.Models.WhatFor", b =>

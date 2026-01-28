@@ -121,6 +121,12 @@
     <Compile Include="Inspection.Designer.cs">
       <DependentUpon>Inspection.cs</DependentUpon>
     </Compile>
+    <Compile Include="MachineLotRequest.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="MachineLotRequest.Designer.cs">
+      <DependentUpon>MachineLotRequest.cs</DependentUpon>
+    </Compile>
     <Compile Include="Main.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -137,6 +143,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Inspection.resx">
       <DependentUpon>Inspection.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="MachineLotRequest.resx">
+      <DependentUpon>MachineLotRequest.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Main.resx">
       <DependentUpon>Main.cs</DependentUpon>

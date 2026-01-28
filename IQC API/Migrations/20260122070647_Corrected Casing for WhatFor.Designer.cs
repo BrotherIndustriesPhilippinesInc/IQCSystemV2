@@ -3,6 +3,7 @@ using System;
 using IQC_API.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace IQC_API.Migrations
 {
     [DbContext(typeof(IQC_API_PG_Context))]
-    partial class IQC_API_PG_ContextModelSnapshot : ModelSnapshot
+    [Migration("20260122070647_Corrected Casing for WhatFor")]
+    partial class CorrectedCasingforWhatFor
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -278,10 +281,6 @@ namespace IQC_API.Migrations
 
                     b.Property<int>("ReleaseReasonId")
                         .HasColumnType("integer");
-
-                    b.Property<string>("Remarks")
-                        .IsRequired()
-                        .HasColumnType("text");
 
                     b.Property<string>("VendorName")
                         .IsRequired()

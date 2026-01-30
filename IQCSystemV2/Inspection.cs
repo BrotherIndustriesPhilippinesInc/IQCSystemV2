@@ -96,6 +96,17 @@ namespace IQCSystemV2
                     document.head.appendChild(swalScript);
                 ");
 
+                await webViewFunctions.ExecuteJavascript(@"
+                    // Call machine lot request function
+
+                    function machineLotRequest() {
+                    let partCode = document.getElementById(""txtMCodeQuery"");
+                    console.log(partCode.value);
+                    sendToWebView('machineLotRequest', {partCode: partCode.value});
+                    }
+                    
+                ");
+
 
                 //LOAD PANELS
                 await webViewFunctions.ExecuteJavascript(@"
@@ -118,9 +129,11 @@ namespace IQCSystemV2
                                     <button id=""generalWI"" class=""btn btn-primary"">General Work Instructions</button>
                                 </div>
                                 <div>
-                                    <button id=""machineLotRequest"" class=""btn btn-primary"" onclick= function() {
-                                    sendToWebView('MachineLotRequest');
-                                };>Machine Lot Request</button>
+                                    <button id=""machineLotRequest"" 
+                                            class=""btn btn-primary"" 
+                                            onclick=""machineLotRequest()"" >
+                                        Machine Lot Request
+                                    </button>
                                 </div>
                             </div>
                             <div id=""items-container""></div>
@@ -546,6 +559,17 @@ namespace IQCSystemV2
                     };
 
                     Process.Start(startInfo);
+                }else if (action["actionName"].ToString() == "machineLotRequest")
+                {
+                    string partCode = action["data"]["partCode"].ToString();
+                    
+                    MachineLotRequest machineLotRequest = new MachineLotRequest(partCode);
+
+                    //Check if the form is already open, if not, open it
+                    if (Application.OpenForms["MachineLotRequest"] == null)
+                    {
+                        machineLotRequest.Show();
+                    }
                 }
             }
 

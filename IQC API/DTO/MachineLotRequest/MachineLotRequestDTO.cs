@@ -9,7 +9,7 @@ namespace IQC_API.DTO.MachineLotRequest
         public string PartName { get; set; }
         public string VendorName { get; set; }
         public int Quantity { get; set; }
-        public string ReleaseNo { get; set; }
+        //public string ReleaseNo { get; set; }
         public bool YellowCard { get; set; }
         public string DCIOtherNo { get; set; }
         public int ReleaseReasonId { get; set; }

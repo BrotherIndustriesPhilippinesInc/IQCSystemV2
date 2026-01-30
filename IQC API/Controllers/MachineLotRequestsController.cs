@@ -83,7 +83,7 @@ namespace IQC_API.Controllers
             {
                 PartCode = machineLotRequest.PartCode,
                 PartName = machineLotRequest.PartName,
-                ReleaseNo = machineLotRequest.ReleaseNo,
+                /*ReleaseNo = machineLotRequest.ReleaseNo,*/
                 VendorName = machineLotRequest.VendorName,
                 Quantity = machineLotRequest.Quantity,
                 DCIOtherNo = machineLotRequest.DCIOtherNo,

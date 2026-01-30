@@ -45,6 +45,9 @@
             this.machineLotRequestWebView.Source = new System.Uri("http://apbiphiqcwb01:8080/iqcv2/operations/machine_lot_request_integrated", System.UriKind.Absolute);
             this.machineLotRequestWebView.TabIndex = 0;
             this.machineLotRequestWebView.ZoomFactor = 1D;
+            this.machineLotRequestWebView.CoreWebView2InitializationCompleted += new System.EventHandler<Microsoft.Web.WebView2.Core.CoreWebView2InitializationCompletedEventArgs>(this.machineLotRequestWebView_CoreWebView2InitializationCompleted);
+            this.machineLotRequestWebView.NavigationCompleted += new System.EventHandler<Microsoft.Web.WebView2.Core.CoreWebView2NavigationCompletedEventArgs>(this.machineLotRequestWebView_NavigationCompleted);
+            this.machineLotRequestWebView.WebMessageReceived += new System.EventHandler<Microsoft.Web.WebView2.Core.CoreWebView2WebMessageReceivedEventArgs>(this.machineLotRequestWebView_WebMessageReceived);
             // 
             // MachineLotRequest
             // 

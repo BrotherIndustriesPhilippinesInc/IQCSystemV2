@@ -288,5 +288,12 @@ namespace IQC_API.Controllers
 
             return results;
         }
+
+        [HttpGet("partcode")]
+        public async Task<List<PartsInformation>> GetPartsInformationsByPartCode([FromQuery] string partCode) {
+            var partsInformation = await _context.PartsInformation.Where(x => x.PartCode == partCode).ToListAsync();
+
+            return partsInformation;
+        }
     }
 }

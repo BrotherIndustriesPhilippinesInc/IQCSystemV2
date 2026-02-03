@@ -904,5 +904,94 @@ namespace IQCSystemV2.Functions
             _webView.CoreWebView2.Stop();
             _webView.Dispose();
         }
+
+        public async Task<bool> HasInputAsync(string cssSelector)
+        {
+            // We use an IIFE (Immediately Invoked Function Expression) to keep variables isolated
+            // We check 3 things:
+            // 1. Does the element exist?
+            // 2. Is the value not null?
+            // 3. Is the trimmed length > 0?
+            string script = $@"
+                (function() {{
+                    var element = document.querySelector('{cssSelector}');
+                    if (!element) return false; 
+                    return element.value && element.value.trim().length > 0;
+                }})();
+            ";
+
+            // WebView2 ALWAYS returns the result as a JSON String.
+            // If JS returns boolean true, C# gets the string "true".
+            string result = await _webView.CoreWebView2.ExecuteScriptAsync(script);
+
+            // Parse the JSON result
+            return result == "true";
+        }
+
+        public async Task TriggerLostFocusAsync(string selector = null)
+        {
+            // If no selector provided, we assume we are blurring the CURRENTLY focused element.
+            string targetJs = string.IsNullOrEmpty(selector)
+                ? "document.activeElement"
+                : $"document.querySelector('{selector}')";
+
+            string script = $@"
+                (function() {{
+                    var element = {targetJs};
+                    if (!element) return;
+
+                    // 1. Fire the standard 'blur' event (what most inputs listen to)
+                    element.dispatchEvent(new Event('blur', {{ bubbles: false, cancelable: true }}));
+
+                    // 2. Fire 'focusout' (bubbles up - frameworks often listen to this)
+                    element.dispatchEvent(new Event('focusout', {{ bubbles: true, cancelable: true }}));
+
+                    // 3. Fire 'change' (CRITICAL: Many validators only run if they think data changed)
+                    element.dispatchEvent(new Event('change', {{ bubbles: true, cancelable: true }}));
+
+                    // 4. Actually remove focus natively
+                    element.blur();
+                }})();
+            ";
+
+            await _webView.CoreWebView2.ExecuteScriptAsync(script);
+        }
+
+        public async Task<bool> SelectByTextAsync(string cssSelector, string textToSelect)
+        {
+            // We iterate the options, find the match, set it, and fire events.
+            // 'trim()' is used to ignore accidental spaces in the HTML.
+            string script = $@"
+            (function() {{
+                var select = document.querySelector('{cssSelector}');
+                if (!select) return 'Error: Select element not found';
+
+                var found = false;
+                for (var i = 0; i < select.options.length; i++) {{
+                    // Compare the visible text (ignoring case and whitespace is safer)
+                    if (select.options[i].text.trim() === '{textToSelect}') {{
+                        select.selectedIndex = i;
+                        found = true;
+                        break;
+                    }}
+                }}
+
+                if (found) {{
+                    // Fire events so the website knows something changed
+                    // (Required for React/Angular/Vue or dependent dropdowns)
+                    select.dispatchEvent(new Event('change', {{ bubbles: true }}));
+                    select.dispatchEvent(new Event('input', {{ bubbles: true }}));
+                    return 'true';
+                }}
+            
+                    return 'false';
+                }})();
+            ";
+
+            string result = await _webView.CoreWebView2.ExecuteScriptAsync(script);
+
+            // Remember: WebView2 returns JSON strings (e.g. "\"true\"" or "\"false\"")
+            return result.Contains("true");
+        }
     }
 }

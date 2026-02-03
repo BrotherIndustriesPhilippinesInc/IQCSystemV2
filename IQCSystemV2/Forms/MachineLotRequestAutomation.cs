@@ -1,26 +1,75 @@
 ﻿using IQCSystemV2.Functions;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
+using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace IQCSystemV2.Forms
 {
+    public class MachineLotRequestData
+    {
+        public string id { get; set; }
+        public string createdBy { get; set; }
+        public string partCode { get; set; }
+        public string partName { get; set; }
+        public string vendorName { get; set; }
+        public int quantity { get; set; }
+        public bool yellowCard { get; set; }
+        public string dciOtherNo { get; set; }
+        public string releaseReasonName { get; set; }
+        public string releaseReasonCode { get; set; }
+        public string whatForName { get; set; }
+        public string whatForCode { get; set; }
+        public string remarks { get; set; }
+
+    }
+
+    public class MachineLotRequestGetDTO
+    {
+        public int Id { get; set; }
+        public string PartCode { get; set; }
+        public string PartName { get; set; }
+        public string VendorName { get; set; }
+        public int Quantity { get; set; }
+        public string ReleaseNo { get; set; }
+        public bool YellowCard { get; set; }
+        public string DCIOtherNo { get; set; }
+        public string Remarks { get; set; }
+
+        public DateTime CreatedDate { get; set; }
+        public string CreatedBy { get; set; }
+
+        public DateTime? ModifiedDate { get; set; }
+        public string ModifiedBy { get; set; }
+
+        // Flattened or nested DTOs
+        public string WhatForName { get; set; }
+        public string ReleaseReasonName { get; set; }
+    }
+
     public partial class MachineLotRequestAutomation : Form
     {
         private WebViewFunctions webViewFunctions;
         private string username = "ZZPDE31G";
         private string password = "ZZPDE31G";
+        private MachineLotRequestData machineLotRequestData;
+        private HttpClient httpClient = new HttpClient();
 
-        public MachineLotRequestAutomation()
+        public MachineLotRequestAutomation(MachineLotRequestData machineLotRequestData)
         {
             InitializeComponent();
             webViewFunctions = new WebViewFunctions(webView21);
+            this.machineLotRequestData = machineLotRequestData;
+            this.httpClient = new HttpClient();
 
             Uri emes_link = new Uri("http://" + username + ":" + password + "@10.248.1.10/BIPHMES/FLoginNew.aspx");
             webView21.Source = emes_link;
@@ -34,6 +83,28 @@ namespace IQCSystemV2.Forms
 
         private async void webView21_NavigationCompleted(object sender, Microsoft.Web.WebView2.Core.CoreWebView2NavigationCompletedEventArgs e)
         {
+            string title= await webViewFunctions.GetElementText("id", "lblTitle");
+            //Sanititize title remove "
+            title = title.Replace("\"", "");
+            if (title != "Summons Release")
+            {
+                return;
+            }
+
+            if (!await webViewFunctions.HasInputAsync("#txtMaterialNameEdit"))
+            {
+                await InputDetails();
+                //await webViewFunctions.ClickButtonAsync("id", "cmdAdd");
+                //JObject
+                JObject data = new JObject()
+                {
+                    { "actionName", "machineLotRequestDone" },
+                    { "data", "" }
+                };
+                webViewFunctions.SendDataToWeb(data, "machineLotRequestDone");
+
+
+            }
             
         }
 
@@ -46,6 +117,46 @@ namespace IQCSystemV2.Forms
             await webViewFunctions.ClickButtonAsync("id", "cmdSubmit");
 
             webView21.Source = link;
+        }
+
+        private async Task InputDetails()
+        {
+            
+            string releaseReasonCode = machineLotRequestData.releaseReasonCode.ToString();
+            string releaseReasonRemarks = machineLotRequestData.remarks.ToString();
+            string partCode = machineLotRequestData.partCode.ToString();
+            string vendorName = machineLotRequestData.vendorName.ToString();
+            string quantity = machineLotRequestData.quantity.ToString();
+            string dciOtherNo = machineLotRequestData.dciOtherNo.ToString();
+
+            await webViewFunctions.SetTextBoxValueAsync("name", "txtDesginNoEdit", dciOtherNo);
+            await webViewFunctions.SetTextAreaValueAsync("name", "txtReleaseContentEdit", releaseReasonRemarks);
+
+            await webViewFunctions.SetTextBoxValueAsync("name", "txtMaterialCodeEdit$ctl00", partCode);
+            await webViewFunctions.TriggerLostFocusAsync(".shortrequire");
+
+            await webViewFunctions.SetTextBoxValueAsync("name", "txtMaterialQtyEdit", quantity);
+
+            await webViewFunctions.SelectElement("id", "drpReleaseReasonEdit", releaseReasonCode);
+
+            await webViewFunctions.SelectByTextAsync("#drpVendorNameEdit", vendorName);
+        }
+
+        
+        private async Task<string> GetRawJsonAsync(string endpoint)
+        {
+            try
+            {
+                // Note: No "using" block needed here if you just want the string content
+                var response = await httpClient.GetAsync(endpoint);
+                response.EnsureSuccessStatusCode();
+
+                return await response.Content.ReadAsStringAsync();
+            }
+            catch (Exception ex)
+            {
+                return "Error: " + ex.Message;
+            }
         }
     }
 }

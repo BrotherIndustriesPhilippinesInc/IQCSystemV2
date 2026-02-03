@@ -1,5 +1,6 @@
 ﻿using IQCSystemV2.Forms;
 using IQCSystemV2.Functions;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
@@ -50,11 +51,12 @@ namespace IQCSystemV2
 
                 if (action["actionName"].ToString() == "SubmitMachineLotRequest")
                 {
-                    MachineLotRequestAutomation machineLotRequest = new MachineLotRequestAutomation();
+                    Console.WriteLine(action["data"]["data"]);
+                    MachineLotRequestData machineLotRequestData = JsonConvert.DeserializeObject<MachineLotRequestData>(action["data"]["data"].ToString());
+                    MachineLotRequestAutomation machineLotRequest = new MachineLotRequestAutomation(machineLotRequestData);
                     machineLotRequest.Show();
                 }
             }
-
             catch (Exception ex)
             {
                 JObject templateGenerationError = new JObject()

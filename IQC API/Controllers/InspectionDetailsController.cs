@@ -378,36 +378,30 @@ namespace IQC_API.Controllers
         [HttpPost("ApproveInspection")]
         public async Task<IActionResult> ApproveInspectionDetails([FromBody] ApproveInspectionRequest request)
         {
-            var inspectionDetails = await _context.InspectionDetails
+            // 1. Get ALL records matching the CheckLot
+            var inspectionRecords = await _context.InspectionDetails
                 .Where(x => x.CheckLot == request.Checklot)
+                .ToListAsync();
+
+            if (!inspectionRecords.Any()) return NotFound("No records found for this CheckLot.");
+
+            // 2. Get the Approver Name (Singular, because one person is clicking 'Approve')
+            string approverFullName = await _userContext.SystemApproverList
+                .Where(x => x.EmployeeNumber == request.Approver)
+                .Select(x => x.FullName)
                 .FirstOrDefaultAsync();
 
-            if (inspectionDetails == null)
+            if (string.IsNullOrEmpty(approverFullName)) return BadRequest("Invalid Approver.");
+
+            // 3. Update every record in the list
+            foreach (var record in inspectionRecords)
             {
-                return NotFound();
+                record.Approver = approverFullName;
+                record.IsApproved = true;
+                // No need for _context.Entry().State = Modified inside a loop if tracked!
             }
 
-            string approverFullName = await _userContext.SystemApproverList
-                    .Where(x => x.EmployeeNumber == request.Approver)
-                    .Select(x => x.FullName)
-                    .FirstOrDefaultAsync();
-
-            inspectionDetails.Approver = approverFullName;
-            inspectionDetails.IsApproved = true;
-            _context.Entry(inspectionDetails).State = EntityState.Modified;
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!InspectionDetailsExists(inspectionDetails.Id))
-                    return NotFound();
-                else
-                    throw;
-            }
-
+            await _context.SaveChangesAsync();
             return NoContent();
         }
 

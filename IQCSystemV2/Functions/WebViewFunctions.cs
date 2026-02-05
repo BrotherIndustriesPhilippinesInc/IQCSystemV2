@@ -13,7 +13,7 @@ using System.Windows.Forms;
 
 namespace IQCSystemV2.Functions
 {
-    internal class WebViewFunctions
+    public class WebViewFunctions
     {
         private WebView2 _webView;
         private TaskCompletionSource<bool> navigationCompletionSource;
@@ -992,6 +992,123 @@ namespace IQCSystemV2.Functions
 
             // Remember: WebView2 returns JSON strings (e.g. "\"true\"" or "\"false\"")
             return result.Contains("true");
+        }
+
+        public async Task<string> GetSelectTextAsync(string cssSelector)
+        {
+            // Build the script dynamically
+            string script = $@"
+                (function() {{
+                    const element = document.querySelector('{cssSelector}');
+                    if (!element) return null;
+                    if (element.selectedIndex === -1) return '';
+                    return element.options[element.selectedIndex].text;
+                }})();";
+
+            // Execute
+            string result = await _webView.CoreWebView2.ExecuteScriptAsync(script);
+
+            // WebView2 returns the result as a JSON string (e.g., ""Selected Text""). 
+            // You must deserialize it or trim the quotes.
+            if (result == "null") return null;
+
+            // System.Text.Json is cleaner than string replacement
+            return System.Text.Json.JsonSerializer.Deserialize<string>(result);
+        }
+
+        public async Task<bool> GetCheckboxStateAsync(string cssSelector)
+        {
+            string script = $@"
+                (function() {{
+                    const element = document.querySelector('{cssSelector}');
+                    if (!element) return false; // Default to false if missing
+                    return element.checked;
+                }})();";
+
+            string result = await _webView.CoreWebView2.ExecuteScriptAsync(script);
+
+            // WebView2 returns JSON: "true" or "false" (or "null")
+            // We can use bool.Parse, but we must clean the quotes first just in case
+            // explicitly handling JSON is safer.
+            if (bool.TryParse(result, out bool isChecked))
+            {
+                return isChecked;
+            }
+
+            // Fallback if result is weird (like "null")
+            return false;
+        }
+
+        public async Task<string> GetSelectValueAsync(string cssSelector)
+        {
+            string script = $@"
+                (function() {{
+                    const element = document.querySelector('{cssSelector}');
+                    if (!element) return null;
+                    return element.value;
+                }})();";
+
+            string result = await _webView.CoreWebView2.ExecuteScriptAsync(script);
+
+            // If the result is "null" (string), return actual null
+            if (result == "null") return null;
+
+            // Cleanly remove the JSON quotes (e.g., ""101"" -> "101")
+            return System.Text.Json.JsonSerializer.Deserialize<string>(result);
+        }
+
+        public async Task<string> GetTextareaValueAsync(string cssSelector)
+        {
+            string script = $@"
+                (function() {{
+                    const element = document.querySelector('{cssSelector}');
+                    if (!element) return null;
+                    return element.value;
+                }})();";
+
+            string result = await _webView.CoreWebView2.ExecuteScriptAsync(script);
+
+            if (result == "null") return null;
+
+            // Deserialize to handle newlines (\n) and special characters correctly
+            return System.Text.Json.JsonSerializer.Deserialize<string>(result);
+        }
+
+        public async Task<bool?> IsElementDisabledAsync(string cssSelector)
+        {
+            // Aiko's Note: This checks the standard HTML 'disabled' attribute.
+            string script = $@"
+                (function() {{
+                    const element = document.querySelector('{cssSelector}');
+                    if (!element) return null;
+                    return element.disabled; 
+                }})();";
+
+            string result = await _webView.CoreWebView2.ExecuteScriptAsync(script);
+
+            // If element wasn't found, JS returns null, which comes back as string "null"
+            if (result == "null") return null;
+
+            // Deserialize to bool (true/false)
+            return System.Text.Json.JsonSerializer.Deserialize<bool>(result);
+        }
+
+        public async Task SetCheckboxStateAsync(string cssSelector, bool shouldBeChecked)
+        {
+            // We compare current state vs desired state.
+            // If they differ, we .click() to trigger any attached events/PostBacks.
+            string script = $@"
+        (function() {{
+            const checkbox = document.querySelector('{cssSelector}');
+            if (!checkbox) return;
+
+            // Only act if the state is different
+            if (checkbox.checked !== {shouldBeChecked.ToString().ToLower()}) {{
+                checkbox.click();
+            }}
+        }})();";
+
+            await _webView.CoreWebView2.ExecuteScriptAsync(script);
         }
     }
 }

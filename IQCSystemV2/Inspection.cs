@@ -100,9 +100,10 @@ namespace IQCSystemV2
                     // Call machine lot request function
 
                     function machineLotRequest() {
-                    let partCode = document.getElementById(""txtMCodeQuery"");
-                    console.log(partCode.value);
-                    sendToWebView('machineLotRequest', {partCode: partCode.value});
+                        let partCode = document.getElementById(""txtMCodeQuery"");
+                        let checkLot = document.getElementById(""txtIqcLotQuery"");
+                        console.log(partCode.value);
+                        sendToWebView('machineLotRequest', {partCode: partCode.value, checkLot: checkLot.value});
                     }
                     
                 ");
@@ -562,8 +563,8 @@ namespace IQCSystemV2
                 }else if (action["actionName"].ToString() == "machineLotRequest")
                 {
                     string partCode = action["data"]["partCode"].ToString();
-                    
-                    MachineLotRequest machineLotRequest = new MachineLotRequest(partCode);
+                    string checkLot = action["data"]["checkLot"].ToString();
+                    MachineLotRequest machineLotRequest = new MachineLotRequest(partCode, checkLot);
 
                     //Check if the form is already open, if not, open it
                     if (Application.OpenForms["MachineLotRequest"] == null)

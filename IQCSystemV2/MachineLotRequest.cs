@@ -18,12 +18,15 @@ namespace IQCSystemV2
     public partial class MachineLotRequest: Form
     {
         public readonly string partCode;
+        public readonly string checkLot;
         private readonly WebViewFunctions webViewFunctions;
 
-        public MachineLotRequest(string partCode)
+
+        public MachineLotRequest(string partCode, string checkLot)
         {
             InitializeComponent();
             this.partCode = partCode;
+            this.checkLot = checkLot;
 
             webViewFunctions = new WebViewFunctions(machineLotRequestWebView);
         }
@@ -41,6 +44,7 @@ namespace IQCSystemV2
         private async Task InitializeData()
         {
             await webViewFunctions.ExecuteJavascript($"document.getElementById('partCode').textContent = '{partCode}';");
+            await webViewFunctions.ExecuteJavascript($"document.getElementById('checkLot').textContent = '{checkLot}';");
         }
 
         private void machineLotRequestWebView_WebMessageReceived(object sender, Microsoft.Web.WebView2.Core.CoreWebView2WebMessageReceivedEventArgs e)
@@ -53,7 +57,7 @@ namespace IQCSystemV2
                 {
                     Console.WriteLine(action["data"]["data"]);
                     MachineLotRequestData machineLotRequestData = JsonConvert.DeserializeObject<MachineLotRequestData>(action["data"]["data"].ToString());
-                    MachineLotRequestAutomation machineLotRequest = new MachineLotRequestAutomation(machineLotRequestData);
+                    MachineLotRequestAutomation machineLotRequest = new MachineLotRequestAutomation(machineLotRequestData, webViewFunctions, this);
                     machineLotRequest.Show();
                 }
             }

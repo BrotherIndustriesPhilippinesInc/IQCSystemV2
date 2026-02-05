@@ -179,6 +179,17 @@ namespace IQCSystemV2
                 History approvalForm = new History(UserIdNumber, data["data"]["checkLot"].ToString());
                 approvalForm.Show();
             }
+            if (data["actionName"].ToString() == "openMachineLotRequestEditWinform")
+            {
+
+                MachineLotRequestEdit machineLotRequest = new MachineLotRequestEdit(data["data"]["releaseNo"].ToString(), data["data"]["modifiedBy"].ToString(), webViewFunctions);
+                machineLotRequest.Show();
+            }
+            if (data["actionName"].ToString() == "openMachineLotRequestDeleteWinform")
+            {
+                MachineLotRequestDelete machineLotRequest = new MachineLotRequestDelete(data["data"]["releaseNo"].ToString(), webViewFunctions);
+                machineLotRequest.Show();
+            }
         }
     }
 }

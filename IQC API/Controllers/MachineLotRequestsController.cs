@@ -47,7 +47,10 @@ namespace IQC_API.Controllers
 
                     // Accessing navigation properties safely
                     WhatForName = x.WhatFor.WhatForName,
-                    ReleaseReasonName = x.ReleaseReason.ReleaseReasonName
+                    ReleaseReasonName = x.ReleaseReason.ReleaseReasonName,
+
+                    CheckLot = x.CheckLot
+
                 })
                 .AsQueryable()
                 .ToListAsync();
@@ -134,6 +137,7 @@ namespace IQC_API.Controllers
             // 1. Map Input DTO -> Entity (For Saving)
             var entity = new MachineLotRequest
             {
+                CheckLot = machineLotRequest.CheckLot,
                 PartCode = machineLotRequest.PartCode,
                 PartName = machineLotRequest.PartName,
                 VendorName = machineLotRequest.VendorName,
@@ -209,6 +213,112 @@ namespace IQC_API.Controllers
         private bool MachineLotRequestExists(int id)
         {
             return _context.MachineLotRequest.Any(e => e.Id == id);
+        }
+
+        [HttpPost("assignReleaseNo")]
+        public async Task<ActionResult<MachineLotRequest>> AssignReleaseNo(AssignReleaseNo machineLotRequest)
+        {
+            //Get latest 
+            MachineLotRequest entity = await _context.MachineLotRequest
+                .OrderByDescending(x => x.Id)
+                .FirstOrDefaultAsync(x => x.CheckLot == machineLotRequest.CheckLot);
+            entity.ReleaseNo = machineLotRequest.ReleaseNo;
+            await _context.SaveChangesAsync();
+
+            return entity;
+        }
+
+        [HttpPost("updateMachineLotRequest")]
+        public async Task<ActionResult<MachineLotRequestGetDTO>> UpdateMachineLotRequest(MachineLotRequestUpdateDTO dto)
+        {
+            // 1. GET THE TARGET (The "Where" part)
+            // We fetch it first because standard EF Core needs to track it to update it.
+            // We Include NOW so we don't have to query the database a second time later.
+            var targetEntity = await _context.MachineLotRequest
+                .Include(x => x.WhatFor)
+                .Include(x => x.ReleaseReason)
+                .FirstOrDefaultAsync(x => x.ReleaseNo == dto.ReleaseNo);
+
+            if (targetEntity == null)
+            {
+                return NotFound($"Request with ReleaseNo '{dto.ReleaseNo}' not found.");
+            }
+
+            // 2. APPLY CHANGES (The "Update" part)
+            // We map the values from your DTO onto the loaded entity.
+            targetEntity.PartCode = dto.PartCode;
+            targetEntity.PartName = dto.PartName;
+            targetEntity.VendorName = dto.VendorName;
+            targetEntity.Quantity = dto.Quantity;
+            targetEntity.YellowCard = dto.YellowCard;
+            targetEntity.DCIOtherNo = dto.DCIOtherNo;
+            targetEntity.Remarks = dto.Remarks;
+
+            // Foreign Keys
+            // FIND THE RELEASE REASON ID VIA RELEASE REASON CODE
+            
+            int releaseReasonId = _context.ReleaseReason.Where(x => x.ReleaseReasonCode == dto.ReleaseReasonId).FirstOrDefault().Id;
+            if (releaseReasonId == null)
+            {
+                return NotFound($"Release Reason with Release Reason Code '{releaseReasonId}' not found.");
+            }
+
+            targetEntity.ReleaseReasonId = releaseReasonId;
+
+            // Audit Fields
+            targetEntity.ModifiedBy = dto.CreatedBy;
+            targetEntity.ModifiedDate = DateTime.Now;
+
+            // 3. SAVE
+            // EF Core detects the changes in 'targetEntity' and generates the UPDATE SQL.
+            await _context.SaveChangesAsync();
+
+            // 4. MAP TO RESPONSE (The "Hydration" part)
+            // Since we used .Include() in Step 1, targetEntity.WhatFor is ALREADY loaded.
+            // We don't need to fetch again!
+            var response = new MachineLotRequestGetDTO
+            {
+                // Now targetEntity.Id is valid because it came from the DB
+                Id = targetEntity.Id,
+                ReleaseNo = targetEntity.ReleaseNo,
+                PartCode = targetEntity.PartCode,
+                PartName = targetEntity.PartName,
+                VendorName = targetEntity.VendorName,
+                Quantity = targetEntity.Quantity,
+                CheckLot = targetEntity.CheckLot,
+                YellowCard = targetEntity.YellowCard,
+                DCIOtherNo = targetEntity.DCIOtherNo,
+                Remarks = targetEntity.Remarks,
+
+                // Flatten Navigation Properties
+                WhatForName = targetEntity.WhatFor?.WhatForName,
+                WhatForCode = targetEntity.WhatFor?.WhatForCode,
+
+                ReleaseReasonName = targetEntity.ReleaseReason?.ReleaseReasonName,
+                ReleaseReasonCode = targetEntity.ReleaseReason?.ReleaseReasonCode,
+
+                CreatedBy = targetEntity.CreatedBy,
+                CreatedDate = targetEntity.CreatedDate,
+                ModifiedBy = targetEntity.ModifiedBy,
+                ModifiedDate = targetEntity.ModifiedDate
+            };
+
+            return Ok(response);
+        }
+
+        [HttpPost("deleteMachineLotRequest")]
+        public async Task<IActionResult> DeleteMachineLotRequest(string releaseNo)
+        {
+            var machineLotRequest = await _context.MachineLotRequest.FirstOrDefaultAsync(x => x.ReleaseNo == releaseNo);
+            if (machineLotRequest == null)
+            {
+                return NotFound();
+            }
+
+            _context.MachineLotRequest.Remove(machineLotRequest);
+            await _context.SaveChangesAsync();
+
+            return Ok();
         }
     }
 }

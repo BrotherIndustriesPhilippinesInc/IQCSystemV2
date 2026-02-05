@@ -3,6 +3,9 @@
     public class MachineLotRequest: BaseModel
     {
         public int Id { get; set; }
+
+        public string CheckLot { get; set; }
+
         public int WhatForId { get; set; }
         public WhatFor WhatFor { get; set; }
         public string PartCode { get; set; }

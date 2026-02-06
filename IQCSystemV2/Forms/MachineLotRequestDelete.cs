@@ -136,7 +136,7 @@ namespace IQCSystemV2.Forms
                 // Ensure you have the 'releaseNo' available in this context. 
                 // If releaseNo comes from the selected grid row, you might need to scrape it first.
 
-                string result = await PostRawJsonAsync($"https://localhost:7246/api/MachineLotRequests/deleteMachineLotRequest?releaseNo={releaseNo}", new { });
+                string result = await PostRawJsonAsync($"http://apbiphiqcwb01:1116/api/MachineLotRequests/deleteMachineLotRequest?releaseNo={releaseNo}", new { });
 
                 if (result.Contains("Error"))
                 {

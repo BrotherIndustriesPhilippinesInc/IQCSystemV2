@@ -76,7 +76,7 @@ namespace IQCSystemV2.Forms
                         releaseNo = releaseNo
                     };
                     Console.WriteLine(postData);
-                    await PostRawJsonAsync("https://localhost:7246/api/MachineLotRequests/assignReleaseNo", postData);
+                    await PostRawJsonAsync("http://apbiphiqcwb01:1116/api/MachineLotRequests/assignReleaseNo", postData);
 
                     //JObject
                     JObject data = new JObject()

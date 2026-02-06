@@ -138,7 +138,7 @@ namespace IQCSystemV2
 
             await webViewFunctions.ExecuteJavascript($"localStorage.setItem(\"user\", JSON.stringify({data["data"]}));");
 
-            //JObject auth = await apiHandler.APIGetCall($"https://localhost:7246/api/SystemApproverLists/ViaEmployeeNumber/{UserIdNumber}");
+            //JObject auth = await apiHandler.APIGetCall($"http://apbiphiqcwb01:1116/api/MachineLotRequests/ViaEmployeeNumber/{UserIdNumber}");
             //await webViewFunctions.ExecuteJavascript($"localStorage.setItem(\"auth\", JSON.stringify({auth}));");
         }
 

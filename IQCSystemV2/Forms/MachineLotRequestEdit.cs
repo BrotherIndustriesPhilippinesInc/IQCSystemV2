@@ -176,7 +176,7 @@ namespace IQCSystemV2.Forms
                 // 2. (Optional) Post to your API here
                 // await PostRawJsonAsync("...", collectedData);
 
-                string res = await PostRawJsonAsync("https://localhost:7246/api/MachineLotRequests/updateMachineLotRequest", collectedData);
+                string res = await PostRawJsonAsync("http://apbiphiqcwb01:1116/api/MachineLotRequests/updateMachineLotRequest", collectedData);
 
                 Console.WriteLine(res);
 

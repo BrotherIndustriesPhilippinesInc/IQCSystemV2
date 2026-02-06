@@ -38,9 +38,9 @@ namespace IQCSystemV2
             Dictionary<string, string> post = new Dictionary<string, string> {
                 { "id_number", this.userID.ToString() }
             };
-            JObject data = await apiHandler.APIPostCall("http://apbiphbpswb02/homs/api/user/getUser.php", post);
+            JObject data = await apiHandler.APIPostCall("http://apbiphiqcwb01:1116/api/Accounts/getUser", post);
 
-            await webViewFunctions.ExecuteJavascript($"localStorage.setItem(\"user\", JSON.stringify({data["data"]}));");
+            await webViewFunctions.ExecuteJavascript($"localStorage.setItem(\"user\", JSON.stringify({data}));");
         }
 
         private async Task Login(string username, string password, Uri link)

@@ -7,6 +7,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using IQC_API.Data;
 using IQC_API.Models;
+using IQC_API.DTO.User;
+using IQC_API.Services;
+using Azure.Core;
 
 namespace IQC_API.Controllers
 {
@@ -15,10 +18,12 @@ namespace IQC_API.Controllers
     public class AccountsController : ControllerBase
     {
         private readonly IQC_API_PG_Context _context;
+        private readonly IUserService _userService;
 
-        public AccountsController(IQC_API_PG_Context context)
+        public AccountsController(IQC_API_PG_Context context, IUserService userService)
         {
             _context = context;
+            _userService = userService;
         }
 
         // GET: api/Accounts
@@ -128,6 +133,28 @@ namespace IQC_API.Controllers
             await _context.SaveChangesAsync();
 
             return Ok(new { id = colorRequest.id });
+        }
+
+        public class UserRequest
+        {
+            public string id_number { get; set; }
+        }
+        [HttpPost("getUser")]
+        public async Task<ActionResult<UserDto>> GetUser([FromBody] UserRequest request)
+        {
+            if (request == null || string.IsNullOrWhiteSpace(request.id_number))
+            {
+                return BadRequest("ID Number is required.");
+            }
+
+            var user = await _userService.GetUserByEmpNoAsync(request.id_number);
+
+            if (user == null)
+            {
+                return NotFound(new { message = "No data found for the given condition." });
+            }
+
+            return Ok(user);
         }
     }
 }

@@ -134,9 +134,9 @@ namespace IQCSystemV2
                 { "id_number", UserIdNumber.ToString() }
             };
 
-            JObject data = await apiHandler.APIPostCall("http://apbiphbpswb02/homs/api/user/getUser.php", post);
+            JObject data = await apiHandler.APIPostCall("http://apbiphiqcwb01:1116/api/Accounts/getUser", post);
 
-            await webViewFunctions.ExecuteJavascript($"localStorage.setItem(\"user\", JSON.stringify({data["data"]}));");
+            await webViewFunctions.ExecuteJavascript($"localStorage.setItem(\"user\", JSON.stringify({data}));");
 
             //JObject auth = await apiHandler.APIGetCall($"http://apbiphiqcwb01:1116/api/MachineLotRequests/ViaEmployeeNumber/{UserIdNumber}");
             //await webViewFunctions.ExecuteJavascript($"localStorage.setItem(\"auth\", JSON.stringify({auth}));");

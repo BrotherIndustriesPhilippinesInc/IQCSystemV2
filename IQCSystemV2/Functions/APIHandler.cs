@@ -46,31 +46,37 @@ namespace IQCSystemV2.Functions
             }
         }
 
+        // Use a static client to prevent Socket Exhaustion
+        private static readonly HttpClient _httpClient = new HttpClient();
+
         public async Task<JObject> APIPostCall(string url, Dictionary<string, string> postData)
         {
-            using (HttpClient client = new HttpClient())
+            try
             {
-                try
-                {
-                    var content = new FormUrlEncodedContent(postData);
-                    HttpResponseMessage response = await client.PostAsync(url, content);
-                    response.EnsureSuccessStatusCode();
-                    string responseBody = await response.Content.ReadAsStringAsync();
+                // 1. Serialize the dictionary to a JSON string
+                string json = Newtonsoft.Json.JsonConvert.SerializeObject(postData);
 
-                    return JObject.Parse(responseBody);
-                }
-                catch (HttpRequestException e)
+                // 2. Wrap it in StringContent with the "application/json" header
+                using (var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json"))
                 {
-                    Console.WriteLine("Request error:");
-                    Console.WriteLine(e.Message);
-                    return null;
+                    using (var response = await _httpClient.PostAsync(url, content))
+                    {
+                        if (!response.IsSuccessStatusCode)
+                        {
+                            var error = await response.Content.ReadAsStringAsync();
+                            Console.WriteLine("API Error: " + response.StatusCode + " - " + error);
+                            return null;
+                        }
+
+                        string responseBody = await response.Content.ReadAsStringAsync();
+                        return JObject.Parse(responseBody);
+                    }
                 }
-                catch (Exception ex)
-                {
-                    Console.WriteLine("Unexpected error:");
-                    Console.WriteLine(ex.Message);
-                    return null;
-                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Unexpected error: " + ex.Message);
+                return null;
             }
         }
     }

@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using IQC_API.Data;
+using IQC_API.Services;
 var builder = WebApplication.CreateBuilder(args);
 
 
@@ -24,6 +25,7 @@ builder.Services.AddDbContext<IQC_APIContext>(options =>
 
 
 // Add services to the container.
+builder.Services.AddScoped<IUserService, UserService>();
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle

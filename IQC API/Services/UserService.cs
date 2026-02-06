@@ -58,8 +58,6 @@ namespace IQC_API.Services
                 Gender = record.Gender,
                 DateHired = record.DateHired,
                 CostCode = record.CostCode
-
-
             };
         }
     }

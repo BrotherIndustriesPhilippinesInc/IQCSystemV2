@@ -61,5 +61,8 @@ namespace IQC_API.DTO.MachineLotRequest
         public string ReleaseReasonCode { get; set; }
 
         public string CheckLot { get; set; }
+
+        public string CreatedByFullName { get; set; }
+        public List<SystemApproverList>? ApproverList { get; set; }
     }
 }

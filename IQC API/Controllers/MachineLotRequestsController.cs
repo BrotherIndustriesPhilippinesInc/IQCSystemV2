@@ -16,16 +16,20 @@ namespace IQC_API.Controllers
     public class MachineLotRequestsController : ControllerBase
     {
         private readonly IQC_API_PG_Context _context;
+        private readonly IQC_APIContext _sqlContext;
 
-        public MachineLotRequestsController(IQC_API_PG_Context context)
+        public MachineLotRequestsController(IQC_API_PG_Context context, IQC_APIContext sqlContext)
         {
             _context = context;
+            _sqlContext = sqlContext;
         }
 
         // GET: api/MachineLotRequests
         [HttpGet]
         public async Task<ActionResult<IEnumerable<MachineLotRequestGetDTO>>> GetMachineLotRequest()
         {
+            // 1. Get the Main Data (MachineLotRequest)
+            // We do NOT fetch the names yet.
             var data = await _context.MachineLotRequest
                 .Select(x => new MachineLotRequestGetDTO
                 {
@@ -38,22 +42,58 @@ namespace IQC_API.Controllers
                     YellowCard = x.YellowCard,
                     DCIOtherNo = x.DCIOtherNo,
                     Remarks = x.Remarks,
-
-                    CreatedBy = x.CreatedBy,
+                    CreatedBy = x.CreatedBy, // Ensure this holds the Employee Number
                     CreatedDate = x.CreatedDate,
-
                     ModifiedBy = x.ModifiedBy,
                     ModifiedDate = x.ModifiedDate,
-
-                    // Accessing navigation properties safely
                     WhatForName = x.WhatFor.WhatForName,
                     ReleaseReasonName = x.ReleaseReason.ReleaseReasonName,
-
                     CheckLot = x.CheckLot
-
                 })
-                .AsQueryable()
                 .ToListAsync();
+
+            // 2. Extract the Employee Numbers (Distinct) to minimize DB lookup
+            // We filter out nulls so we don't query for nothing.
+            var employeeNumbers = data
+                .Where(x => !string.IsNullOrEmpty(x.CreatedBy))
+                .Select(x => x.CreatedBy)
+                .Distinct()
+                .ToList();
+
+            // 3. Fetch Full Names from the OTHER Context (_sqlContext)
+            // Warning: SystemApproverList usually contains duplicates if an approver 
+            // is listed for multiple systems. We GroupBy or Select Distinct to avoid crashing the Dictionary.
+            var userNames = await _sqlContext.SystemApproverList
+                .Where(x => employeeNumbers.Contains(x.EmployeeNumber)) // Use the column name you gave me
+                .Select(x => new { x.EmployeeNumber, x.FullName }) // Select only what we need
+                .Distinct() // specific to your DB, ensure you don't get duplicates
+                .ToDictionaryAsync(
+                    k => k.EmployeeNumber,
+                    v => v.FullName
+                );
+
+            // 4. Fetch the Approvers List (The one you had before)
+            var approvers = await _sqlContext.SystemApproverList
+                .Where(x => x.SystemID == 73)
+                .ToListAsync();
+
+            // 5. Stitch it all together in memory
+            foreach (var item in data)
+            {
+                // Assign the Creator's Full Name using the Dictionary
+                if (item.CreatedBy != null && userNames.TryGetValue(item.CreatedBy, out var fullName))
+                {
+                    item.CreatedByFullName = fullName;
+                }
+                else
+                {
+                    // Optional: Handle cases where the ID isn't found in the Approver List
+                    item.CreatedByFullName = "Unknown Employee";
+                }
+
+                // Assign the generic approver list
+                //item.ApproverList = approvers;
+            }
 
             return Ok(data);
         }

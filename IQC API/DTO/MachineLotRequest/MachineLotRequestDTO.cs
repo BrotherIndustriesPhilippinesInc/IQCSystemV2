@@ -18,6 +18,8 @@ namespace IQC_API.DTO.MachineLotRequest
         public string Remarks { get; set; }
 
         public string? ReleaseNo { get; set; }
+
+        public string LotNumber { get; set; }
     }
 
     public class MachineLotRequestUpdateDTO : BaseModel

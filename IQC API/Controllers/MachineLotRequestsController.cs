@@ -193,7 +193,9 @@ namespace IQC_API.Controllers
 
                 // Audit Fields
                 CreatedBy = machineLotRequest.CreatedBy,
-                CreatedDate = DateTime.Now //
+                CreatedDate = DateTime.Now, 
+
+                LotNumber = machineLotRequest.LotNumber
             };
 
             _context.MachineLotRequest.Add(entity);

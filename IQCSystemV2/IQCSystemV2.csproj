@@ -155,6 +155,12 @@
     <Compile Include="Forms\MachineLotRequestEdit.Designer.cs">
       <DependentUpon>MachineLotRequestEdit.cs</DependentUpon>
     </Compile>
+    <Compile Include="Forms\MachineLotRequestExport.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\MachineLotRequestExport.Designer.cs">
+      <DependentUpon>MachineLotRequestExport.cs</DependentUpon>
+    </Compile>
     <Compile Include="Functions\APIHandler.cs" />
     <Compile Include="Functions\OpenToolHandler.cs" />
     <Compile Include="Functions\WebViewFunctions.cs" />
@@ -195,6 +201,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Forms\MachineLotRequestEdit.resx">
       <DependentUpon>MachineLotRequestEdit.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Forms\MachineLotRequestExport.resx">
+      <DependentUpon>MachineLotRequestExport.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="History.resx">
       <DependentUpon>History.cs</DependentUpon>

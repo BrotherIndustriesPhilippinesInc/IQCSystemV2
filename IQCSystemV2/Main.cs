@@ -190,6 +190,11 @@ namespace IQCSystemV2
                 MachineLotRequestDelete machineLotRequest = new MachineLotRequestDelete(data["data"]["releaseNo"].ToString(), webViewFunctions);
                 machineLotRequest.Show();
             }
+            if (data["actionName"].ToString() == "exportMachineLotRequests")
+            {
+                MachineLotRequestExport machineLotRequest = new MachineLotRequestExport(webViewFunctions);
+                machineLotRequest.Show();
+            }
         }
     }
 }

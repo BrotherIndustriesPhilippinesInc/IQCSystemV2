@@ -3,6 +3,7 @@ using System;
 using IQC_API.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace IQC_API.Migrations
 {
     [DbContext(typeof(IQC_API_PG_Context))]
-    partial class IQC_API_PG_ContextModelSnapshot : ModelSnapshot
+    [Migration("20260210040745_SpellCorrectionMachineLotRequest")]
+    partial class SpellCorrectionMachineLotRequest
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

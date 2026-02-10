@@ -48,7 +48,8 @@ namespace IQC_API.Controllers
                     ModifiedDate = x.ModifiedDate,
                     WhatForName = x.WhatFor.WhatForName,
                     ReleaseReasonName = x.ReleaseReason.ReleaseReasonName,
-                    CheckLot = x.CheckLot
+                    CheckLot = x.CheckLot,
+                    LotNumber = x.LotNumber
                 })
                 .ToListAsync();
 
@@ -361,6 +362,21 @@ namespace IQC_API.Controllers
             await _context.SaveChangesAsync();
 
             return Ok();
+        }
+
+        [HttpPost("MachineLotRequestExportation")]
+        public async Task<ActionResult<MachineLotRequestGetDTO>> MachineLotRequestExportation(string releaseNo, string exportedBy)
+        {
+            var machineLotRequest = await _context.MachineLotRequest.FirstOrDefaultAsync(x => x.ReleaseNo == releaseNo);
+            if (machineLotRequest == null)
+            {
+                return NotFound();
+            }
+
+            machineLotRequest.ExportedBy = exportedBy;
+            machineLotRequest.ExportDate = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+            return CreatedAtAction("GetMachineLotRequest", new { id = machineLotRequest.Id }, machineLotRequest);
         }
     }
 }

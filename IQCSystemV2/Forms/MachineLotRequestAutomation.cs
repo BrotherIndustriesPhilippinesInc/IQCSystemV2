@@ -178,8 +178,6 @@ namespace IQCSystemV2.Forms
                 return $"System Error: {ex.Message}";
             }
         }
-
-
     }
 
     public class MachineLotRequestData

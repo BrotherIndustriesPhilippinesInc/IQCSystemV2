@@ -192,7 +192,7 @@ namespace IQCSystemV2
             }
             if (data["actionName"].ToString() == "exportMachineLotRequests")
             {
-                MachineLotRequestExport machineLotRequest = new MachineLotRequestExport(webViewFunctions);
+                MachineLotRequestExport machineLotRequest = new MachineLotRequestExport(webViewFunctions, data["data"]["modifiedBy"].ToString());
                 machineLotRequest.Show();
             }
         }

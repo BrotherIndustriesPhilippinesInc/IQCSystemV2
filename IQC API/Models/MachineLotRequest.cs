@@ -21,7 +21,7 @@
 
         public string Remarks { get; set; }
 
-        public string? ExpoortedBy { get; set; }
+        public string? ExportedBy { get; set; }
         public DateTime? ExportDate { get; set; }
         public string LotNumber { get; set; }
     }

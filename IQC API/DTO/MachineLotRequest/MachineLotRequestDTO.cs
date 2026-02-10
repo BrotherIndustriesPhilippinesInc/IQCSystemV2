@@ -66,5 +66,7 @@ namespace IQC_API.DTO.MachineLotRequest
 
         public string CreatedByFullName { get; set; }
         public List<SystemApproverList>? ApproverList { get; set; }
+
+        public string? LotNumber { get; set; }
     }
 }

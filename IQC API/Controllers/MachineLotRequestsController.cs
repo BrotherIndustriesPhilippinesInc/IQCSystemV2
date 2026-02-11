@@ -49,7 +49,10 @@ namespace IQC_API.Controllers
                     WhatForName = x.WhatFor.WhatForName,
                     ReleaseReasonName = x.ReleaseReason.ReleaseReasonName,
                     CheckLot = x.CheckLot,
-                    LotNumber = x.LotNumber
+                    LotNumber = x.LotNumber,
+                    ModelCode = _context.PartsInformation.Where(y => y.PartCode == x.PartCode)
+                        .Select(p => p.ModelCategory)
+                        .FirstOrDefault()
                 })
                 .ToListAsync();
 

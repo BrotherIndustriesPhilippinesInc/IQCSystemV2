@@ -275,6 +275,7 @@ namespace IQCSystemV2.Forms
             public string Remarks { get; set; }
             public string LotNumber { get; set; }
 
+            public string ModelCode { get; set; }
         }
 
 
@@ -390,8 +391,8 @@ namespace IQCSystemV2.Forms
         private void FillYellowCard(IXLWorksheet sheet, int position, YellowCardDto data)
         {
             // --- 1. DEFINE ANCHOR POINTS ---
-            // "PART NAME" Value is at C7 (Row 7, Col 3)
-            int rowBase = 7;
+            // "MODEL CODE" Value is at C5 (Row 5, Col 3)
+            int rowBase = 5;
             int colBase = 3;
 
             // --- 2. CALCULATE TARGET OFFSET ---
@@ -414,6 +415,9 @@ namespace IQCSystemV2.Forms
             targetCol = colBase + (colIndex * 9);
 
             // --- 3. WRITE DATA ---
+
+            // 0. Model Code (Base) -> C5
+            sheet.Cell(targetRow, targetCol).Value = data.ModelCode;
 
             // 1. Part Name (Base) -> C7
             sheet.Cell(targetRow, targetCol).Value = data.PartName;

@@ -91,7 +91,6 @@ namespace IQCSystemV2
 
             apiHandler = new APIHandler();
             webViewFunctions = new WebViewFunctions(webView21);
-
         }
 
         private void button1_Click(object sender, EventArgs e)

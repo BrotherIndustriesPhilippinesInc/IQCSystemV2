@@ -127,7 +127,13 @@ namespace IQC_API.Controllers
 
                     // Accessing navigation properties safely
                     WhatForName = x.WhatFor.WhatForName,
-                    ReleaseReasonName = x.ReleaseReason.ReleaseReasonName
+                    ReleaseReasonName = x.ReleaseReason.ReleaseReasonName,
+
+                    LotNumber = x.LotNumber,
+
+                    ModelCode = _context.PartsInformation.Where(y => y.PartCode == x.PartCode)
+                        .Select(p => p.ModelCategory)
+                        .FirstOrDefault()
                 })
                 .Where(x => x.Id == id)
                 .AsQueryable()
@@ -370,16 +376,40 @@ namespace IQC_API.Controllers
         [HttpPost("MachineLotRequestExportation")]
         public async Task<ActionResult<MachineLotRequestGetDTO>> MachineLotRequestExportation(string releaseNo, string exportedBy)
         {
-            var machineLotRequest = await _context.MachineLotRequest.FirstOrDefaultAsync(x => x.ReleaseNo == releaseNo);
-            if (machineLotRequest == null)
+            // 1. Find the entity
+            var machineLotRequestEntity = await _context.MachineLotRequest.FirstOrDefaultAsync(x => x.ReleaseNo == releaseNo);
+
+            if (machineLotRequestEntity == null)
             {
                 return NotFound();
             }
 
-            machineLotRequest.ExportedBy = exportedBy;
-            machineLotRequest.ExportDate = DateTime.UtcNow;
+            // 2. Update the entity
+            machineLotRequestEntity.ExportedBy = exportedBy;
+            machineLotRequestEntity.ExportDate = DateTime.UtcNow;
+
+            // 3. Save changes to DB
             await _context.SaveChangesAsync();
-            return CreatedAtAction("GetMachineLotRequest", new { id = machineLotRequest.Id }, machineLotRequest);
+
+            // ---------------------------------------------------------
+            // THE CHEAT FIX: Call your existing GET method manually!
+            // ---------------------------------------------------------
+
+            // We call the method directly. Since it returns ActionResult<T>, we await it.
+            var resultAction = await GetMachineLotRequest(machineLotRequestEntity.Id);
+
+            // 4. Extract the DTO from the result
+            // Since your GetMachineLotRequest returns the object directly (not wrapped in Ok()), 
+            // the data is in .Value.
+            if (resultAction.Value != null)
+            {
+                // Return the FULL DTO (which includes ModelCode)
+                return CreatedAtAction("GetMachineLotRequest", new { id = machineLotRequestEntity.Id }, resultAction.Value);
+            }
+
+            // Fallback: If for some reason the GET failed (it shouldn't), return the entity.
+            // But this will still be missing ModelCode, so don't rely on this hitting often.
+            return CreatedAtAction("GetMachineLotRequest", new { id = machineLotRequestEntity.Id }, machineLotRequestEntity);
         }
     }
 }

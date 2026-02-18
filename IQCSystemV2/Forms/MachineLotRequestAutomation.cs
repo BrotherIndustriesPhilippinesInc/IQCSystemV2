@@ -76,7 +76,9 @@ namespace IQCSystemV2.Forms
                         releaseNo = releaseNo
                     };
                     Console.WriteLine(postData);
-                    await PostRawJsonAsync("http://apbiphiqcwb01:1116/api/MachineLotRequests/assignReleaseNo", postData);
+                    string result = await PostRawJsonAsync("http://apbiphiqcwb01:1116/api/MachineLotRequests/assignReleaseNo", postData);
+                    //string result = await PostRawJsonAsync("https://localhost:7246/api/MachineLotRequests/assignReleaseNo", postData);
+                    Console.WriteLine(result);
 
                     //JObject
                     JObject data = new JObject()
@@ -94,12 +96,7 @@ namespace IQCSystemV2.Forms
                     // Finally, close this form
                     this.Close();
                 });
-
-                
-
-               
             }
-            
         }
 
         private async Task Login(string username, string password, Uri link)
@@ -115,7 +112,6 @@ namespace IQCSystemV2.Forms
 
         private async Task InputDetails()
         {
-            
             string releaseReasonCode = machineLotRequestData.releaseReasonCode.ToString();
             string releaseReasonRemarks = machineLotRequestData.remarks.ToString();
             string partCode = machineLotRequestData.partCode.ToString();

@@ -307,6 +307,7 @@ namespace IQCSystemV2
                     //////////////////// FUNCTIONS ///////////////////////////////////////////////////////////////////////////////
 
                     function generateItems(category) {
+                    console.log('trial');
                         let container = document.getElementById('items-container');
                         container.innerHTML = ''; 
                         container.className = ""d-flex gap-2 flex-wrap mt-2"";
@@ -322,7 +323,7 @@ namespace IQCSystemV2
                             `;
                             container.appendChild(div);
                         });
-
+                        
                         // Attach events to ALL new buttons
                         document.querySelectorAll('.iqc-items').forEach(btn => {
                             btn.addEventListener('click', function () {
@@ -331,7 +332,7 @@ namespace IQCSystemV2
                                 console.log(`${category} & ${fileName} clicked`);
                                 if (category == ""threeD"") 
                                 {
-                                    openThreeD(fileName);      
+                                    openThreeD(fileName); 
                                 }else{
                                     openItems(category, fileName);
                                 }
@@ -584,6 +585,11 @@ namespace IQCSystemV2
                 webViewFunctions.SendDataToWeb(templateGenerationError, "mainWebView_WebMessageReceived");
                 MessageBox.Show("mainWebView_WebMessageReceived: " + ex.Message);
             }
+        }
+
+        private void Inspection_Load(object sender, EventArgs e)
+        {
+
         }
     }
 }

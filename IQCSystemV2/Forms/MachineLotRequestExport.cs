@@ -286,7 +286,7 @@ namespace IQCSystemV2.Forms
             var cardDataList = new List<YellowCardDto>();
             foreach (string releaseNo in releaseNos)
             {
-                string jsonResult = await PostRawJsonAsync($@"https://localhost:7246/api/MachineLotRequests/MachineLotRequestExportation?releaseNo={releaseNo}&exportedBy={userId}", new { });
+                string jsonResult = await PostRawJsonAsync($@"http://apbiphiqcwb01:1116/api/MachineLotRequests/MachineLotRequestExportation?releaseNo={releaseNo}&exportedBy={userId}", new { });
 
                 // Convert the JSON string to our C# object
                 try
@@ -420,29 +420,29 @@ namespace IQCSystemV2.Forms
             sheet.Cell(targetRow, targetCol).Value = data.ModelCode;
 
             // 1. Part Name (Base) -> C7
-            sheet.Cell(targetRow, targetCol).Value = data.PartName;
+            sheet.Cell(targetRow + 2, targetCol).Value = data.PartName;
 
             // 2. Part Code (2 rows down) -> C9
-            sheet.Cell(targetRow + 2, targetCol).Value = data.PartCode;
+            sheet.Cell(targetRow + 4, targetCol).Value = data.PartCode;
 
             // 3. Lot No / Release No (4 rows down) -> D11
             // (You had +1 for Column D)
-            sheet.Cell(targetRow + 4, targetCol).Value = data.LotNumber;
+            sheet.Cell(targetRow + 6, targetCol).Value = data.LotNumber;
 
             // 4. Lot Size / Quantity (6 rows down) -> C13
             // CORRECTION: Changed from +5 to +6 to hit Row 13
-            sheet.Cell(targetRow + 6, targetCol).Value = data.Quantity;
+            sheet.Cell(targetRow + 8, targetCol).Value = data.Quantity;
 
             // 5. DCI Change / Design Change No (2 rows UP) -> G5
             // CORRECTION: Base is Row 7, so 7 - 2 = 5.
             // Column G is 4 columns right of C (3 + 4 = 7)
-            sheet.Cell(targetRow - 2, targetCol + 4).Value = data.DCIOtherNo;
+            sheet.Cell(targetRow, targetCol + 4).Value = data.DCIOtherNo;
 
             // 6. Supplier / Vendor (7 rows down) -> D14
-            sheet.Cell(targetRow + 7, targetCol + 1).Value = data.VendorName;
+            sheet.Cell(targetRow + 8, targetCol + 1).Value = data.VendorName;
 
             // 7. Remarks (7 rows down) -> G14
-            sheet.Cell(targetRow + 7, targetCol + 4).Value = data.Remarks;
+            sheet.Cell(targetRow + 2, targetCol + 3).Value = data.Remarks;
         }
 
     }

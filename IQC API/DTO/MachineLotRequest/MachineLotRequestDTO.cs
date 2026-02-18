@@ -70,5 +70,8 @@ namespace IQC_API.DTO.MachineLotRequest
         public string? LotNumber { get; set; }
 
         public string ModelCode { get; set; }
+
+        public string? ExportedBy { get; set; }
+        public string? ExportedByFullName { get; set; }
     }
 }

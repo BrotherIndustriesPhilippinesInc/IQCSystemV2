@@ -134,8 +134,8 @@ namespace IQCSystemV2.Forms
                 {
                     if (download.State == Microsoft.Web.WebView2.Core.CoreWebView2DownloadState.Completed)
                     {
-                        MessageBox.Show($"Captured Download!\nPath: {download.ResultFilePath}", "Success");
-
+                        //MessageBox.Show($"Captured Download!\nPath: {download.ResultFilePath}", "Success");
+                        MessageBox.Show($"Loading, please wait for \"OK Window\"", "Success");
                         await BuildYellowCard(download.ResultFilePath.ToString());
 
                     }
@@ -282,101 +282,89 @@ namespace IQCSystemV2.Forms
 
         private async Task BuildYellowCard(string targetFilePath)
         {
-            //FETCH DATA OF RELEASENOS
+            // 1. FETCH DATA
             var cardDataList = new List<YellowCardDto>();
+
+            // note: assuming 'releaseNos' and 'userId' are class-level variables since they weren't passed in
             foreach (string releaseNo in releaseNos)
             {
-                string jsonResult = await PostRawJsonAsync($@"http://apbiphiqcwb01:1116/api/MachineLotRequests/MachineLotRequestExportation?releaseNo={releaseNo}&exportedBy={userId}", new { });
-
-                // Convert the JSON string to our C# object
+                // ... (Keep your existing API call logic here) ...
                 try
                 {
-                    // If your API returns a List, use List<YellowCardDto>. If it returns one object, use YellowCardDto.
+                    string jsonResult = await PostRawJsonAsync($@"http://apbiphiqcwb01:1116/api/MachineLotRequests/MachineLotRequestExportation?releaseNo={releaseNo}&exportedBy={userId}", new { });
                     var data = JsonConvert.DeserializeObject<YellowCardDto>(jsonResult);
+
                     if (data != null)
-                    {
                         cardDataList.Add(data);
-                    }
                 }
                 catch (Exception ex)
                 {
                     Console.WriteLine($"Error parsing JSON for {releaseNo}: {ex.Message}");
                 }
             }
+
             if (cardDataList.Count == 0)
             {
                 MessageBox.Show("No data retrieved from API.", "Warning");
                 return;
             }
 
-            //OPEN EXCEL TEMPLATE
-            // 1. Get the base directory where your app is running
+            // 2. PREPARE EXCEL
             string baseDir = AppDomain.CurrentDomain.BaseDirectory;
-
-            // 2. Combine the paths exactly as you described
             string templatePath = Path.Combine(baseDir, "Resource", "YellowCardTemplate", "YELLOW CARD.xlsx");
 
-            // 3. Debugging check (Keep this while testing!)
             if (!File.Exists(templatePath))
             {
-                // This will tell you EXACTLY where it is looking so you can fix the folder
                 MessageBox.Show($"Could not find template at:\n{templatePath}", "File Missing");
                 return;
             }
 
-
-            //CHECK IF RELEASENOS COUNT EXCEED 6 IF YES CREATE ANOTHER SHEET WITH SAME TEMPLATE
             await Task.Run(() =>
             {
                 try
                 {
-                    // 1. Prepare the Yellow Cards (In Memory)
-                    // We use a 'using' block for the template so it closes automatically
+                    // Open the template in memory
                     using (var sourceWorkbook = new XLWorkbook(templatePath))
                     {
+                        // We assume the template is on the first sheet
                         var templateSheet = sourceWorkbook.Worksheet(1);
-                        templateSheet.Name = "Yellow Card 1"; // Give it a nice name
 
-                        int totalItems = cardDataList.Count;
-                        int sheetsNeeded = (totalItems + 5) / 6;
-
-                        // --- CLONE & FILL (Your existing logic) ---
-                        for (int s = 1; s < sheetsNeeded; s++)
-                        {
-                            templateSheet.CopyTo($"Yellow Card {s + 1}");
-                        }
-
-                        for (int i = 0; i < totalItems; i++)
+                        // LOOP: One Sheet Per Item
+                        for (int i = 0; i < cardDataList.Count; i++)
                         {
                             var item = cardDataList[i];
-                            int sheetIndex = i / 6;
-                            int positionInSheet = i % 6;
+                            string sheetName = $"YC-{i + 1}";
 
-                            var targetSheet = sourceWorkbook.Worksheet(sheetIndex + 1);
-                            FillYellowCard(targetSheet, positionInSheet, item);
+                            // 1. Clone the template
+                            var newSheet = templateSheet.CopyTo(sheetName);
+
+                            // 2. Fill ALL 6 slots on this specific sheet with the SAME item
+                            for (int pos = 0; pos < 6; pos++)
+                            {
+                                FillYellowCard(newSheet, pos, item);
+                            }
                         }
 
-                        // --- NEW STEP: MERGE INTO DOWNLOADED FILE ---
+                        // 3. Delete the original empty template sheet 
+                        // so it doesn't appear in the final output.
+                        templateSheet.Delete();
 
-                        Console.WriteLine($"Opening target file: {targetFilePath}");
-
-                        // Open the file we downloaded earlier
+                        // 4. MERGE INTO TARGET FILE
+                        // Open the file where you want to save these sheets
                         using (var targetWorkbook = new XLWorkbook(targetFilePath))
                         {
-                            // Loop through our generated Yellow Card sheets and copy them over
                             foreach (var sheet in sourceWorkbook.Worksheets)
                             {
-                                // .CopyTo(targetWorkbook) automatically adds the sheet to the other file
+                                // Copy the filled sheets over
                                 sheet.CopyTo(targetWorkbook, sheet.Name);
                             }
-
-                            // Save the changes to the downloaded file
                             targetWorkbook.Save();
                         }
-                    } // sourceWorkbook closes/disposes here
+                    }
 
                     this.Invoke(new Action(() => {
-                        MessageBox.Show($"Process Complete!\nYellow Cards added to:\n{targetFilePath}", "Success");
+                        //MessageBox.Show($"Process Complete!\n{cardDataList.Count} Yellow Cards added to:\n{targetFilePath}", "Success");
+                        MessageBox.Show($"OK Window, you can now close this window!", "Success");
                     }));
                 }
                 catch (Exception ex)
@@ -387,7 +375,6 @@ namespace IQCSystemV2.Forms
                 }
             });
         }
-
         private void FillYellowCard(IXLWorksheet sheet, int position, YellowCardDto data)
         {
             // --- 1. DEFINE ANCHOR POINTS ---
@@ -443,6 +430,9 @@ namespace IQCSystemV2.Forms
 
             // 7. Remarks (7 rows down) -> G14
             sheet.Cell(targetRow + 2, targetCol + 3).Value = data.Remarks;
+
+            // 8. Release No () -> Q3
+            sheet.Cell(targetRow - 2, targetCol + 5).Value = data.ReleaseNo;
         }
 
     }

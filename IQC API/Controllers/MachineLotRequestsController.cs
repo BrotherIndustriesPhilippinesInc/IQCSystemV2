@@ -52,7 +52,8 @@ namespace IQC_API.Controllers
                     LotNumber = x.LotNumber,
                     ModelCode = _context.PartsInformation.Where(y => y.PartCode == x.PartCode)
                         .Select(p => p.ModelCategory)
-                        .FirstOrDefault()
+                        .FirstOrDefault(),
+                    ExportedBy = x.ExportedBy
                 })
                 .ToListAsync();
 
@@ -61,6 +62,12 @@ namespace IQC_API.Controllers
             var employeeNumbers = data
                 .Where(x => !string.IsNullOrEmpty(x.CreatedBy))
                 .Select(x => x.CreatedBy)
+                .Distinct()
+                .ToList();
+
+            var exportedByNumbers = data
+                .Where(x => !string.IsNullOrEmpty(x.ExportedBy))
+                .Select(x => x.ExportedBy)
                 .Distinct()
                 .ToList();
 
@@ -76,6 +83,15 @@ namespace IQC_API.Controllers
                     v => v.FullName
                 );
 
+            var exportedNames = await _sqlContext.SystemApproverList
+                .Where(x => exportedByNumbers.Contains(x.EmployeeNumber)) // Use the column name you gave me
+                .Select(x => new { x.EmployeeNumber, x.FullName }) // Select only what we need
+                .Distinct() // specific to your DB, ensure you don't get duplicates
+                .ToDictionaryAsync(
+                    k => k.EmployeeNumber,
+                    v => v.FullName
+                );
+
             // 4. Fetch the Approvers List (The one you had before)
             var approvers = await _sqlContext.SystemApproverList
                 .Where(x => x.SystemID == 73)
@@ -84,19 +100,26 @@ namespace IQC_API.Controllers
             // 5. Stitch it all together in memory
             foreach (var item in data)
             {
-                // Assign the Creator's Full Name using the Dictionary
-                if (item.CreatedBy != null && userNames.TryGetValue(item.CreatedBy, out var fullName))
+                // Assign the Creator's Full Name
+                if (!string.IsNullOrEmpty(item.CreatedBy) && userNames.TryGetValue(item.CreatedBy, out var fullName))
                 {
                     item.CreatedByFullName = fullName;
                 }
                 else
                 {
-                    // Optional: Handle cases where the ID isn't found in the Approver List
                     item.CreatedByFullName = "Unknown Employee";
                 }
 
-                // Assign the generic approver list
-                //item.ApproverList = approvers;
+                // --- THE MISSING EXPORTED BY LOGIC ---
+                // Assign the Exporter's Full Name
+                if (!string.IsNullOrEmpty(item.ExportedBy) && exportedNames.TryGetValue(item.ExportedBy, out var exportedFullName))
+                {
+                    item.ExportedByFullName = exportedFullName; // Ensure this property exists in your DTO!
+                }
+                else
+                {
+                    item.ExportedByFullName = string.IsNullOrEmpty(item.ExportedBy) ? null : "Unknown Employee";
+                }
             }
 
             return Ok(data);

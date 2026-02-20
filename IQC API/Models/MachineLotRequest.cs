@@ -24,6 +24,8 @@
         public string? ExportedBy { get; set; }
         public DateTime? ExportDate { get; set; }
         public string LotNumber { get; set; }
+
+        public DateTime? DeliveryDate { get; set; }
     }
 
     public class WhatFor: BaseModel

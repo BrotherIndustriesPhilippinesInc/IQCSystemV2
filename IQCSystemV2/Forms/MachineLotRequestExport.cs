@@ -276,6 +276,8 @@ namespace IQCSystemV2.Forms
             public string LotNumber { get; set; }
 
             public string ModelCode { get; set; }
+
+            public DateTime? DeliveryDate { get; set; }
         }
 
 
@@ -433,6 +435,11 @@ namespace IQCSystemV2.Forms
 
             // 8. Release No () -> Q3
             sheet.Cell(targetRow - 2, targetCol + 5).Value = data.ReleaseNo;
+
+            // 9. Release Date () -> C31
+            //Convert to DateTime to yy/mm/dd
+            string formattedDate = DateTimeOffset.Parse(data.DeliveryDate.ToString()).ToString("yy/MM/dd");
+            sheet.Cell(targetRow + 10, targetCol).Value = formattedDate;
         }
 
     }

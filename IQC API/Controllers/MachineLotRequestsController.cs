@@ -54,7 +54,8 @@ namespace IQC_API.Controllers
                         .Select(p => p.ModelCategory)
                         .FirstOrDefault(),
                     ExportedBy = x.ExportedBy,
-                    ExportDate = x.ExportDate
+                    ExportDate = x.ExportDate,
+                    DeliveryDate = x.DeliveryDate
                 })
                 .ToListAsync();
 
@@ -157,7 +158,9 @@ namespace IQC_API.Controllers
 
                     ModelCode = _context.PartsInformation.Where(y => y.PartCode == x.PartCode)
                         .Select(p => p.ModelCategory)
-                        .FirstOrDefault()
+                        .FirstOrDefault(),
+
+                    DeliveryDate = x.DeliveryDate
                 })
                 .Where(x => x.Id == id)
                 .AsQueryable()
@@ -229,7 +232,9 @@ namespace IQC_API.Controllers
                 CreatedBy = machineLotRequest.CreatedBy,
                 CreatedDate = DateTime.Now, 
 
-                LotNumber = machineLotRequest.LotNumber
+                LotNumber = machineLotRequest.LotNumber,
+
+                DeliveryDate = machineLotRequest.DeliveryDate
             };
 
             _context.MachineLotRequest.Add(entity);
@@ -253,7 +258,7 @@ namespace IQC_API.Controllers
                 YellowCard = result.YellowCard,
                 DCIOtherNo = result.DCIOtherNo,
                 Remarks = result.Remarks,
-
+                
                 // The Magic: Flattening the navigation properties
                 WhatForName = result.WhatFor.WhatForName,
                 WhatForCode = result.WhatFor.WhatForCode,
@@ -263,7 +268,8 @@ namespace IQC_API.Controllers
 
                 // If your DTO has these fields, map them too. If not, ignore.
                 CreatedBy = result.CreatedBy,
-                CreatedDate = result.CreatedDate
+                CreatedDate = result.CreatedDate,
+                DeliveryDate = machineLotRequest.DeliveryDate
             };
 
             // Return 201 Created with the location header and the fully populated DTO

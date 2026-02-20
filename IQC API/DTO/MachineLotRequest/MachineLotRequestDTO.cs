@@ -20,6 +20,8 @@ namespace IQC_API.DTO.MachineLotRequest
         public string? ReleaseNo { get; set; }
 
         public string LotNumber { get; set; }
+
+        public DateTime DeliveryDate { get; set; }
     }
 
     public class MachineLotRequestUpdateDTO : BaseModel
@@ -75,5 +77,7 @@ namespace IQC_API.DTO.MachineLotRequest
         public string? ExportedByFullName { get; set; }
 
         public DateTime? ExportDate { get; set; }
+
+        public DateTime? DeliveryDate { get; set; }
     }
 }

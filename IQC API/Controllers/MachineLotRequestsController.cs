@@ -53,7 +53,8 @@ namespace IQC_API.Controllers
                     ModelCode = _context.PartsInformation.Where(y => y.PartCode == x.PartCode)
                         .Select(p => p.ModelCategory)
                         .FirstOrDefault(),
-                    ExportedBy = x.ExportedBy
+                    ExportedBy = x.ExportedBy,
+                    ExportDate = x.ExportDate
                 })
                 .ToListAsync();
 

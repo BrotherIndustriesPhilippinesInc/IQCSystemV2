@@ -55,7 +55,6 @@
             this.Controls.Add(this.webView21);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.None;
             this.Name = "MachineLotRequestDelete";
-            this.Opacity = 0D;
             this.Text = "MachineLotRequestDelete";
             ((System.ComponentModel.ISupportInitialize)(this.webView21)).EndInit();
             this.ResumeLayout(false);

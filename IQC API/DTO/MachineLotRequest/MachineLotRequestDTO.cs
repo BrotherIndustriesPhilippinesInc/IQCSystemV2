@@ -73,5 +73,7 @@ namespace IQC_API.DTO.MachineLotRequest
 
         public string? ExportedBy { get; set; }
         public string? ExportedByFullName { get; set; }
+
+        public DateTime? ExportDate { get; set; }
     }
 }

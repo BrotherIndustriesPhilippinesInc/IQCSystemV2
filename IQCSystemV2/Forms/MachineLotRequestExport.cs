@@ -151,47 +151,47 @@ namespace IQCSystemV2.Forms
         private async Task InjectExportInterceptor()
         {
             string script = @"
-    (function() {
-        const btn = document.getElementById('cmdComBineExport');
-        // Safety check: Exit if button not found or already hooked
-        if (!btn || btn.dataset.hasExportListener) return;
+            (function() {
+                const btn = document.getElementById('cmdComBineExport');
+                // Safety check: Exit if button not found or already hooked
+                if (!btn || btn.dataset.hasExportListener) return;
 
-        // 1. Remove inline onclick if it exists (Clean slate)
-        btn.removeAttribute('onclick'); 
+                // 1. Remove inline onclick if it exists (Clean slate)
+                btn.removeAttribute('onclick'); 
 
-        // 2. Add our automated listener
-        btn.addEventListener('click', function(e) {
-            // STOP the immediate submit
-            e.preventDefault();
+                // 2. Add our automated listener
+                btn.addEventListener('click', function(e) {
+                    // STOP the immediate submit
+                    e.preventDefault();
 
-            // Signal C# that Export was clicked
-            if(window.chrome && window.chrome.webview) {
-                window.chrome.webview.postMessage('EXPORT_CLICKED');
-            }
-        });
+                    // Signal C# that Export was clicked
+                    if(window.chrome && window.chrome.webview) {
+                        window.chrome.webview.postMessage('EXPORT_CLICKED');
+                    }
+                });
 
-        // 3. Define the Resume function that C# will call later
-        window.finalizeExport = function() {
-            const form = btn.form;
-            if (form) {
-                // ASP.NET Core/WebForms Requirement: 
-                // We must manually inject the button's name/value because 
-                // calling form.submit() programmatically usually omits the submit button itself.
-                const hiddenInput = document.createElement('input');
-                hiddenInput.type = 'hidden';
-                hiddenInput.name = btn.name;
-                hiddenInput.value = btn.value;
-                form.appendChild(hiddenInput);
+                // 3. Define the Resume function that C# will call later
+                window.finalizeExport = function() {
+                    const form = btn.form;
+                    if (form) {
+                        // ASP.NET Core/WebForms Requirement: 
+                        // We must manually inject the button's name/value because 
+                        // calling form.submit() programmatically usually omits the submit button itself.
+                        const hiddenInput = document.createElement('input');
+                        hiddenInput.type = 'hidden';
+                        hiddenInput.name = btn.name;
+                        hiddenInput.value = btn.value;
+                        form.appendChild(hiddenInput);
 
-                // Resume intended purpose
-                form.submit();
-            }
-        };
+                        // Resume intended purpose
+                        form.submit();
+                    }
+                };
 
-        // Mark as attached so we don't attach twice
-        btn.dataset.hasExportListener = 'true';
-    })();
-    ";
+                // Mark as attached so we don't attach twice
+                btn.dataset.hasExportListener = 'true';
+            })();
+            ";
 
             await webViewFunctions.ExecuteJavascript(script);
         }
@@ -201,18 +201,18 @@ namespace IQCSystemV2.Forms
             // Do NOT use JSON.stringify() inside the JS if you want to keep it simple, 
             // but even if you do, the logic below handles it.
             string jsScript = @"
-        (function() {
-            var checkboxes = document.querySelectorAll('#gridWebGrid input[type=""checkbox""]:checked');
-            var results = [];
-            for (var i = 0; i < checkboxes.length; i++) {
-                var row = checkboxes[i].closest('tr');
-                if (row && row.cells.length > 1) {
-                    results.push(row.cells[1].innerText.trim());
-                }
-            }
-            return results; 
-        })();
-    ";
+                (function() {
+                    var checkboxes = document.querySelectorAll('#gridWebGrid input[type=""checkbox""]:checked');
+                    var results = [];
+                    for (var i = 0; i < checkboxes.length; i++) {
+                        var row = checkboxes[i].closest('tr');
+                        if (row && row.cells.length > 1) {
+                            results.push(row.cells[1].innerText.trim());
+                        }
+                    }
+                    return results; 
+                })();
+            ";
 
             try
             {

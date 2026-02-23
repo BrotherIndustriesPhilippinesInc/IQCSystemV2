@@ -121,43 +121,49 @@ namespace IQC_API.Controllers
         {
             try
             {
-                // Step 1: SQL filtering only on non-empty strings
-                var raw = InspectionBaseQuery
-                    .Where(x => x.IQCCheckDate != null && x.IQCCheckDate != "")
-                    .ToList(); // now allowed to parse in memory
+                var phTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Manila");
+                var query = _context.InspectionDetails.AsQueryable();
 
-                // Step 2: Safe parse in memory
-                var parsed = raw
-                    .Select(x =>
-                    {
-                        if (!DateTime.TryParse(x.IQCCheckDate, out var dt))
-                            return null;
-
-                        return new { Date = dt.Date };
-                    })
-                    .Where(x => x != null)
-                    .ToList();
-
-                // Step 3: Filter by date
+                // 1. Timezone-aware date filtering
                 if (startDate.HasValue)
-                    parsed = parsed.Where(x => x.Date >= startDate.Value.Date).ToList();
+                {
+                    var startLocal = new DateTimeOffset(startDate.Value.Date, phTimeZone.BaseUtcOffset);
+                    query = query.Where(x => x.CreatedDate >= startLocal.UtcDateTime);
+                }
 
                 if (endDate.HasValue)
-                    parsed = parsed.Where(x => x.Date <= endDate.Value.Date).ToList();
+                {
+                    var endLocal = new DateTimeOffset(endDate.Value.Date.AddDays(1).AddTicks(-1), phTimeZone.BaseUtcOffset);
+                    query = query.Where(x => x.CreatedDate <= endLocal.UtcDateTime);
+                }
 
+                // 2. Fetch ONLY the needed columns into memory
+                // WE ADD IsApproved HERE so the data is available for counting
+                var filteredData = query
+                    .Select(x => new { x.Id, x.CreatedDate, x.IsApproved })
+                    .ToList();
+
+                // 3. Group and aggregate in memory
+                var dailyTrends = filteredData
+                    .GroupBy(x => TimeZoneInfo.ConvertTimeFromUtc(x.CreatedDate, phTimeZone).Date)
+                    .Select(g => new
+                    {
+                        Date = g.Key,
+                        TotalInspections = g.Count(),
+                        // This counts only the rows in this specific day where IsApproved == true
+                        TotalApproved = g.Count(x => x.IsApproved)
+                    })
+                    .OrderBy(x => x.Date)
+                    .ToList();
+
+                // 4. Return the final structured JSON
                 return Ok(new
                 {
-                    TotalInspections = parsed.Count,
+                    TotalInspections = dailyTrends.Sum(x => x.TotalInspections),
+                    TotalApproved = dailyTrends.Sum(x => x.TotalApproved), // Aggregate the grand total here
                     StartDate = startDate,
                     EndDate = endDate,
-                    DailyTrends = parsed
-                        .GroupBy(x => x.Date)
-                        .Select(g => new
-                        {
-                            Date = g.Key,
-                            TotalInspections = g.Count()
-                        })
-                        .OrderBy(x => x.Date)
+                    DailyTrends = dailyTrends
                 });
             }
             catch (Exception ex)
@@ -261,6 +267,62 @@ namespace IQC_API.Controllers
 
             return Ok(grouped);
         }
+
+        [HttpGet("summary")]
+        public IActionResult GetOverallSummary(DateTime? startDate, DateTime? endDate)
+        {
+            try
+            {
+                var phTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Manila");
+                var query = _context.InspectionDetails.AsQueryable();
+
+                // 1. Timezone-aware filtering on CreatedDate (so we don't miss rows!)
+                if (startDate.HasValue)
+                {
+                    var startUtc = new DateTimeOffset(startDate.Value.Date, phTimeZone.BaseUtcOffset).UtcDateTime;
+                    query = query.Where(ind => ind.CreatedDate >= startUtc);
+                }
+
+                if (endDate.HasValue)
+                {
+                    var endUtc = new DateTimeOffset(endDate.Value.Date.AddDays(1).AddTicks(-1), phTimeZone.BaseUtcOffset).UtcDateTime;
+                    query = query.Where(ind => ind.CreatedDate <= endUtc);
+                }
+
+                // 2. Project into an anonymous type FIRST to safely grab the QMLotCategory
+                var baseData = query.Select(ind => new
+                {
+                    IQCCheckDate = ind.IQCCheckDate,
+                    CheckUser = ind.CheckUser,
+                    QMLotCategory = _context.PartsInformation
+                        .Where(pi => pi.PartCode == ind.PartCode)
+                        .Select(pi => pi.QMLotCategory)
+                        .FirstOrDefault() // Prevents your duplicate row problem!
+                });
+
+                // 3. Group by the three columns to get the count
+                var tableData = baseData
+                    .GroupBy(x => new { x.IQCCheckDate, x.CheckUser, x.QMLotCategory })
+                    .Select(g => new
+                    {
+                        IQCCheckDate = g.Key.IQCCheckDate,
+                        CheckUser = g.Key.CheckUser,
+                        QMLotCategory = g.Key.QMLotCategory,
+                        TotalInspections = g.Count() // This is your "(Totalnumber of inspection for the day)"
+                    })
+                    .OrderByDescending(x => x.IQCCheckDate)
+                    .ToList();
+
+                // DataTables expects the array inside a "data" property
+                return Ok(new { data = tableData });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Message = "Error fetching table data", Error = ex.Message });
+            }
+        }
+
+
 
     }
 }

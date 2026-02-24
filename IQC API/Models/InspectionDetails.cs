@@ -116,5 +116,9 @@ namespace IQC_API.Models
         public string VisualCheckItems { get; set; }
 
         public string DimensionCheckItems { get; set; }
+
+        public DateTime? ApprovedDate { get; set; } 
+
+
     }
 }

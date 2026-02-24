@@ -196,7 +196,8 @@ namespace IQC_API.Controllers
                         // 🧩 Merge multiple vendor/supplier rows into one cell
                         VendorSupplierMerged = partsInfo.ContainsKey(x.PartCode)
                             ? partsInfo[x.PartCode]
-                            : ""
+                            : "",
+                        ApprovedDate = x.ApprovedDate
                     })
                     .ToList();
 
@@ -398,6 +399,7 @@ namespace IQC_API.Controllers
             {
                 record.Approver = approverFullName;
                 record.IsApproved = true;
+                record.ApprovedDate = DateTime.UtcNow;
                 // No need for _context.Entry().State = Modified inside a loop if tracked!
             }
 

@@ -113,5 +113,7 @@ namespace IQC_API.DTO
         public string? Approver { get; set; }
 
         public string VendorSupplierMerged { get; set; }
+
+        public DateTime? ApprovedDate { get; set; }
     }
 }

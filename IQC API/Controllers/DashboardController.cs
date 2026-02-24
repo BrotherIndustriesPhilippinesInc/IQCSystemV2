@@ -172,6 +172,47 @@ namespace IQC_API.Controllers
             }
         }
 
+        [HttpGet("inspection-trends")]
+        public IActionResult GetInspectionTrends(string? startDate, string? endDate)
+        {
+            try
+            {
+                var query = _context.InspectionDetails.AsQueryable();
+
+                // 1. String-based filtering for IQCCheckDate
+                if (!string.IsNullOrEmpty(startDate))
+                    query = query.Where(ind => ind.IQCCheckDate.CompareTo(startDate) >= 0);
+
+                if (!string.IsNullOrEmpty(endDate))
+                    query = query.Where(ind => ind.IQCCheckDate.CompareTo(endDate) <= 0);
+
+                // 2. Join and Project
+                var trendData = (from ind in query
+                                 join pi in _context.PartsInformation on ind.PartCode equals pi.PartCode
+                                 select new
+                                 {
+                                     ind.IQCCheckDate,
+                                     pi.QMLotCategory
+                                 })
+                                .AsEnumerable() // Move to memory to handle the grouping safely
+                                .GroupBy(x => new { x.IQCCheckDate, x.QMLotCategory })
+                                .Select(g => new
+                                {
+                                    Date = g.Key.IQCCheckDate,
+                                    Category = g.Key.QMLotCategory,
+                                    Count = g.Count()
+                                })
+                                .OrderBy(x => x.Date)
+                                .ToList();
+
+                return Ok(new { dailyTrends = trendData });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Message = "Error fetching trend data", Error = ex.Message });
+            }
+        }
+
         [HttpGet("approval-summary")]
         public IActionResult ApprovalSummary(DateTime? startDate, DateTime? endDate)
         {
@@ -269,51 +310,43 @@ namespace IQC_API.Controllers
         }
 
         [HttpGet("summary")]
-        public IActionResult GetOverallSummary(DateTime? startDate, DateTime? endDate)
+        public IActionResult GetOverallSummary(string? startDate, string? endDate)
         {
             try
             {
-                var phTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Manila");
+                // 1. Start with the queryable for InspectionDetails
                 var query = _context.InspectionDetails.AsQueryable();
 
-                // 1. Timezone-aware filtering on CreatedDate (so we don't miss rows!)
-                if (startDate.HasValue)
-                {
-                    var startUtc = new DateTimeOffset(startDate.Value.Date, phTimeZone.BaseUtcOffset).UtcDateTime;
-                    query = query.Where(ind => ind.CreatedDate >= startUtc);
-                }
+                // 2. Filter by IQCCheckDate string
+                if (!string.IsNullOrEmpty(startDate))
+                    query = query.Where(ind => ind.IQCCheckDate.CompareTo(startDate) >= 0);
 
-                if (endDate.HasValue)
-                {
-                    var endUtc = new DateTimeOffset(endDate.Value.Date.AddDays(1).AddTicks(-1), phTimeZone.BaseUtcOffset).UtcDateTime;
-                    query = query.Where(ind => ind.CreatedDate <= endUtc);
-                }
+                if (!string.IsNullOrEmpty(endDate))
+                    query = query.Where(ind => ind.IQCCheckDate.CompareTo(endDate) <= 0);
 
-                // 2. Project into an anonymous type FIRST to safely grab the QMLotCategory
-                var baseData = query.Select(ind => new
-                {
-                    IQCCheckDate = ind.IQCCheckDate,
-                    CheckUser = ind.CheckUser,
-                    QMLotCategory = _context.PartsInformation
-                        .Where(pi => pi.PartCode == ind.PartCode)
-                        .Select(pi => pi.QMLotCategory)
-                        .FirstOrDefault() // Prevents your duplicate row problem!
-                });
+                // 3. Join with PartsInformation and group by Supplier
+                var tableData = (from ind in query
+                                 join pi in _context.PartsInformation on ind.PartCode equals pi.PartCode
+                                 select new
+                                 {
+                                     ind.IQCCheckDate,
+                                     ind.CheckUser,
+                                     pi.SupplierName, // New basis
+                                     pi.QMLotCategory
+                                 })
+                                .AsEnumerable() // Grouping in memory is safer for complex keys in EF Core
+                                .GroupBy(x => new { x.IQCCheckDate, x.CheckUser, x.SupplierName, x.QMLotCategory })
+                                .Select(g => new
+                                {
+                                    iqcCheckDate = g.Key.IQCCheckDate,
+                                    checkUser = g.Key.CheckUser,
+                                    supplierName = g.Key.SupplierName,
+                                    qmLotCategory = g.Key.QMLotCategory,
+                                    totalInspections = g.Count()
+                                })
+                                .OrderByDescending(x => x.iqcCheckDate)
+                                .ToList();
 
-                // 3. Group by the three columns to get the count
-                var tableData = baseData
-                    .GroupBy(x => new { x.IQCCheckDate, x.CheckUser, x.QMLotCategory })
-                    .Select(g => new
-                    {
-                        IQCCheckDate = g.Key.IQCCheckDate,
-                        CheckUser = g.Key.CheckUser,
-                        QMLotCategory = g.Key.QMLotCategory,
-                        TotalInspections = g.Count() // This is your "(Totalnumber of inspection for the day)"
-                    })
-                    .OrderByDescending(x => x.IQCCheckDate)
-                    .ToList();
-
-                // DataTables expects the array inside a "data" property
                 return Ok(new { data = tableData });
             }
             catch (Exception ex)

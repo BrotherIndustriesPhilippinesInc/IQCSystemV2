@@ -179,31 +179,31 @@ namespace IQC_API.Controllers
             {
                 var query = _context.InspectionDetails.AsQueryable();
 
-                // 1. String-based filtering for IQCCheckDate
                 if (!string.IsNullOrEmpty(startDate))
                     query = query.Where(ind => ind.IQCCheckDate.CompareTo(startDate) >= 0);
 
                 if (!string.IsNullOrEmpty(endDate))
                     query = query.Where(ind => ind.IQCCheckDate.CompareTo(endDate) <= 0);
 
-                // 2. Join and Project
                 var trendData = (from ind in query
                                  join pi in _context.PartsInformation on ind.PartCode equals pi.PartCode
                                  select new
                                  {
                                      ind.IQCCheckDate,
-                                     pi.QMLotCategory
+                                     pi.QMLotCategory,
+                                     ind.IsApproved // 1. Bring the boolean into the projection
                                  })
-                                .AsEnumerable() // Move to memory to handle the grouping safely
-                                .GroupBy(x => new { x.IQCCheckDate, x.QMLotCategory })
-                                .Select(g => new
-                                {
-                                    Date = g.Key.IQCCheckDate,
-                                    Category = g.Key.QMLotCategory,
-                                    Count = g.Count()
-                                })
-                                .OrderBy(x => x.Date)
-                                .ToList();
+                                 // STILL NO .AsEnumerable()! Let the database do the work.
+                                 .GroupBy(x => new { x.IQCCheckDate, x.QMLotCategory })
+                                 .Select(g => new
+                                 {
+                                     Date = g.Key.IQCCheckDate,
+                                     Category = g.Key.QMLotCategory,
+                                     TotalCount = g.Count(),
+                                     ApprovedCount = g.Count(x => x.IsApproved) // 2. Count only the true values
+                                 })
+                                 .OrderBy(x => x.Date)
+                                 .ToList();
 
                 return Ok(new { dailyTrends = trendData });
             }
@@ -314,38 +314,37 @@ namespace IQC_API.Controllers
         {
             try
             {
-                // 1. Start with the queryable for InspectionDetails
                 var query = _context.InspectionDetails.AsQueryable();
 
-                // 2. Filter by IQCCheckDate string
                 if (!string.IsNullOrEmpty(startDate))
                     query = query.Where(ind => ind.IQCCheckDate.CompareTo(startDate) >= 0);
 
                 if (!string.IsNullOrEmpty(endDate))
                     query = query.Where(ind => ind.IQCCheckDate.CompareTo(endDate) <= 0);
 
-                // 3. Join with PartsInformation and group by Supplier
                 var tableData = (from ind in query
                                  join pi in _context.PartsInformation on ind.PartCode equals pi.PartCode
                                  select new
                                  {
                                      ind.IQCCheckDate,
                                      ind.CheckUser,
-                                     pi.SupplierName, // New basis
-                                     pi.QMLotCategory
+                                     pi.SupplierName,
+                                     pi.QMLotCategory,
+                                     ind.PartCode // 1. Bring it into the projection
                                  })
-                                .AsEnumerable() // Grouping in memory is safer for complex keys in EF Core
-                                .GroupBy(x => new { x.IQCCheckDate, x.CheckUser, x.SupplierName, x.QMLotCategory })
-                                .Select(g => new
-                                {
-                                    iqcCheckDate = g.Key.IQCCheckDate,
-                                    checkUser = g.Key.CheckUser,
-                                    supplierName = g.Key.SupplierName,
-                                    qmLotCategory = g.Key.QMLotCategory,
-                                    totalInspections = g.Count()
-                                })
-                                .OrderByDescending(x => x.iqcCheckDate)
-                                .ToList();
+                                 // REMOVED .AsEnumerable()! 
+                                 .GroupBy(x => new { x.IQCCheckDate, x.CheckUser, x.SupplierName, x.QMLotCategory, x.PartCode }) // 2. Add to GroupBy
+                                 .Select(g => new
+                                 {
+                                     iqcCheckDate = g.Key.IQCCheckDate,
+                                     checkUser = g.Key.CheckUser,
+                                     supplierName = g.Key.SupplierName,
+                                     qmLotCategory = g.Key.QMLotCategory,
+                                     partCode = g.Key.PartCode, // 3. Extract it
+                                     totalInspections = g.Count()
+                                 })
+                                 .OrderByDescending(x => x.iqcCheckDate)
+                                 .ToList(); // Execution happens HERE, safely grouped by SQL.
 
                 return Ok(new { data = tableData });
             }

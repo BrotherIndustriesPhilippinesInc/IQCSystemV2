@@ -76,19 +76,39 @@ namespace IQC_API.Controllers
             // 3. Fetch Full Names from the OTHER Context (_sqlContext)
             // Warning: SystemApproverList usually contains duplicates if an approver 
             // is listed for multiple systems. We GroupBy or Select Distinct to avoid crashing the Dictionary.
+            //var userNames = await _sqlContext.SystemApproverList
+            //    .Where(x => employeeNumbers.Contains(x.EmployeeNumber)) // Use the column name you gave me
+            //    .Select(x => new { x.EmployeeNumber, x.FullName }) // Select only what we need
+            //    .Distinct() // specific to your DB, ensure you don't get duplicates
+            //    .ToDictionaryAsync(
+            //        k => k.EmployeeNumber,
+            //        v => v.FullName
+            //    );
+
+            //var exportedNames = await _sqlContext.SystemApproverList
+            //    .Where(x => exportedByNumbers.Contains(x.EmployeeNumber)) // Use the column name you gave me
+            //    .Select(x => new { x.EmployeeNumber, x.FullName }) // Select only what we need
+            //    .Distinct() // specific to your DB, ensure you don't get duplicates
+            //    .ToDictionaryAsync(
+            //        k => k.EmployeeNumber,
+            //        v => v.FullName
+            //    );
+
+            // 3. Fetch Full Names from the OTHER Context (_sqlContext)
+            // We GroupBy the EmployeeNumber to ensure we only get ONE key per employee.
             var userNames = await _sqlContext.SystemApproverList
-                .Where(x => employeeNumbers.Contains(x.EmployeeNumber)) // Use the column name you gave me
-                .Select(x => new { x.EmployeeNumber, x.FullName }) // Select only what we need
-                .Distinct() // specific to your DB, ensure you don't get duplicates
+                .Where(x => employeeNumbers.Contains(x.EmployeeNumber))
+                .GroupBy(x => x.EmployeeNumber) // Group all duplicates together
+                .Select(g => g.FirstOrDefault()) // Take only the first record found for each ID
                 .ToDictionaryAsync(
                     k => k.EmployeeNumber,
                     v => v.FullName
                 );
 
             var exportedNames = await _sqlContext.SystemApproverList
-                .Where(x => exportedByNumbers.Contains(x.EmployeeNumber)) // Use the column name you gave me
-                .Select(x => new { x.EmployeeNumber, x.FullName }) // Select only what we need
-                .Distinct() // specific to your DB, ensure you don't get duplicates
+                .Where(x => exportedByNumbers.Contains(x.EmployeeNumber))
+                .GroupBy(x => x.EmployeeNumber) // Group all duplicates together
+                .Select(g => g.FirstOrDefault()) // Take only the first record found for each ID
                 .ToDictionaryAsync(
                     k => k.EmployeeNumber,
                     v => v.FullName

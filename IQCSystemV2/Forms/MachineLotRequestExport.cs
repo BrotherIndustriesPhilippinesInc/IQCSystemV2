@@ -135,7 +135,8 @@ namespace IQCSystemV2.Forms
                     if (download.State == Microsoft.Web.WebView2.Core.CoreWebView2DownloadState.Completed)
                     {
                         //MessageBox.Show($"Captured Download!\nPath: {download.ResultFilePath}", "Success");
-                        MessageBox.Show($"Loading, please wait for \"OK Window\"", "Success");
+                        //MessageBox.Show($"Loading, please wait for \"OK Window\"", "Success");
+                        webView21.ExecuteScriptAsync("alert('Loading, please wait for \"OK Window\". Please do not close')");
                         await BuildYellowCard(download.ResultFilePath.ToString());
 
                     }
@@ -367,6 +368,7 @@ namespace IQCSystemV2.Forms
                     this.Invoke(new Action(() => {
                         //MessageBox.Show($"Process Complete!\n{cardDataList.Count} Yellow Cards added to:\n{targetFilePath}", "Success");
                         MessageBox.Show($"OK Window, you can now close this window!", "Success");
+                        this.Close();
                     }));
                 }
                 catch (Exception ex)

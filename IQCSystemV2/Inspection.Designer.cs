@@ -58,6 +58,7 @@
             this.Name = "Inspection";
             this.Text = "Inspection";
             this.WindowState = System.Windows.Forms.FormWindowState.Maximized;
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Inspection_FormClosing);
             this.Load += new System.EventHandler(this.Inspection_Load);
             ((System.ComponentModel.ISupportInitialize)(this.webView21)).EndInit();
             this.ResumeLayout(false);

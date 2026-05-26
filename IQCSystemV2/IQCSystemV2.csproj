@@ -8,13 +8,14 @@
     <OutputType>WinExe</OutputType>
     <RootNamespace>IQCSystemV2</RootNamespace>
     <AssemblyName>IQCSystemV2</AssemblyName>
-    <TargetFrameworkVersion>v4.8.1</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <Deterministic>true</Deterministic>
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
     <IsWebBootstrapper>false</IsWebBootstrapper>
+    <TargetFrameworkProfile />
     <PublishUrl>\\apbiphsh04\C0_Project\10_system_development\Installer\IQC V2\</PublishUrl>
     <Install>true</Install>
     <InstallFrom>Unc</InstallFrom>
@@ -27,7 +28,7 @@
     <MapFileExtensions>true</MapFileExtensions>
     <CreateWebPageOnPublish>true</CreateWebPageOnPublish>
     <WebPage>publish.htm</WebPage>
-    <ApplicationRevision>54</ApplicationRevision>
+    <ApplicationRevision>65</ApplicationRevision>
     <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
     <UseApplicationTrust>false</UseApplicationTrust>
     <PublishWizardCompleted>true</PublishWizardCompleted>
@@ -188,6 +189,7 @@
     </Compile>
     <Compile Include="Functions\APIHandler.cs" />
     <Compile Include="Functions\OpenToolHandler.cs" />
+    <Compile Include="Functions\OpenToolHandlerV2.cs" />
     <Compile Include="Functions\WebViewFunctions.cs" />
     <Compile Include="History.cs">
       <SubType>Form</SubType>
@@ -250,6 +252,7 @@
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DependentUpon>Resources.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
     </Compile>
     <None Include="IQCSystemV2_TemporaryKey.pfx" />
     <None Include="packages.config" />

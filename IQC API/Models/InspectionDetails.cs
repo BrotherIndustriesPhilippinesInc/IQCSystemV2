@@ -119,6 +119,5 @@ namespace IQC_API.Models
 
         public DateTime? ApprovedDate { get; set; } 
 
-
     }
 }

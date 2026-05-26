@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -61,6 +62,37 @@ namespace IQCSystemV2
             Login(username, password, ordersCheckTable);
 
             SetStorage();
+        }
+
+        private void WriteToLocalLog(string status, string source, string output, string errorMessage = "")
+        {
+            try
+            {
+                // 1. Define the directory on the local disk (CommonApplicationData = C:\ProgramData)
+                // This is accessible by all users and usually has write permissions.
+                string logFolder = "C:\\IQC_v2_logs\\Approval";
+
+                // 2. Create directory if it doesn't exist
+                if (!Directory.Exists(logFolder))
+                    Directory.CreateDirectory(logFolder);
+
+                // 3. Define file name (one log file per day, e.g., Log_2026-03-18.txt)
+                string logFile = Path.Combine(logFolder, $"Log_{DateTime.Now:yyyy-MM-dd}.txt");
+
+                // 4. Format the message
+                string logEntry = $"[{DateTime.Now:HH:mm:ss}] {status}\n" +
+                                  $"  File: {Path.GetFileName(source)}\n" +
+                                  $"  Path: {source}\n" +
+                                  (status == "SUCCESS" ? $"  Saved To: {output}\n" : $"  Error: {errorMessage}\n") +
+                                  new string('-', 50) + Environment.NewLine;
+
+                // 5. Append to the file
+                File.AppendAllText(logFile, logEntry);
+            }
+            catch
+            {
+                // Fail silently so a logging error doesn't crash your main app
+            }
         }
 
         private async void webView21_NavigationCompleted(object sender, Microsoft.Web.WebView2.Core.CoreWebView2NavigationCompletedEventArgs e)
@@ -128,6 +160,7 @@ namespace IQCSystemV2
                             window.chrome.webview.postMessage('close');
                         }
 
+
                         async function updateApproval(checklot) {
                             let isApproved = document.getElementById('cmdSubmit').disabled;
                             
@@ -144,12 +177,11 @@ namespace IQCSystemV2
                                     if (!res.ok) throw new Error('Server responded with ' + res.status);
 
                                     console.log('Auto-approved status updated ✅');
-
                                     // Show SweetAlert confirmation
                                     Swal.fire({
                                         title: 'Approval Already Completed! 🎉',
                                         text: 'The inspection status has been successfully updated.',
-                                        icon: 'success',
+                                        icon: 'success', 
                                         confirmButtonText: 'Close'
                                     }).then((result) => {
                                         if (result.isConfirmed) {
@@ -159,7 +191,6 @@ namespace IQCSystemV2
 
                                 } catch (err) {
                                     console.error('Auto-approval failed:', err);
-
                                     Swal.fire({
                                         title: 'Error 😖',
                                         text: 'Auto-approval failed: ' + err.message,
@@ -182,7 +213,18 @@ namespace IQCSystemV2
             if (message == "close")
             {
                 // ⏳ wait 1 second before closing
-                await Task.Delay(1000);
+                await Task.Delay(3000);
+                this.Close();
+            }
+            else if (message.StartsWith("LOG_PAYLOAD|"))
+            {
+                var parts = message.Split('|');
+                var status = parts[1];
+                var source = parts[2];
+                var output = parts[3];
+                var error = parts.Length > 4 ? parts[4] : "";
+                WriteToLocalLog(status, source, output, error); 
+                await Task.Delay(3000);
                 this.Close();
             }
         }

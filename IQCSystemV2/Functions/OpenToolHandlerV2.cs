@@ -2,15 +2,18 @@
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace IQCSystemV2.Functions
 {
-    class OpenToolHandler
+    class OpenToolHandlerV2
     {
         string searchItem;
         string twodDirectory;
@@ -24,14 +27,17 @@ namespace IQCSystemV2.Functions
 
         string serverResourceDirectory;
 
-        public OpenToolHandler(string searchItem)
+        private CancellationToken _token;
+
+        public OpenToolHandlerV2(string searchItem, CancellationToken token)
         {
             this.searchItem = searchItem.Substring(0, searchItem.Length - 3);
+            this._token = token;
             threedDirectory = "\\\\apbiphsh04\\41_PQCDept\\41a_IQC\\04 Inspection\\0000 OPEN Tool System\\01 3D Drawing";
             twodDirectory = "\\\\apbiphsh04\\41_PQCDept\\41a_IQC\\04 Inspection\\0000 OPEN Tool System\\02 2D Drawing";
             wiDirectory = "\\\\apbiphsh04\\41_PQCDept\\41a_IQC\\04 Inspection\\0000 OPEN Tool System\\03 Work Instruction";
             artworkDirectory = "\\\\apbiphsh04\\41_PQCDept\\41a_IQC\\04 Inspection\\0000 OPEN Tool System\\04 Artwork";
-            dciDirectory = "\\\\apbiphsh04\\41_PQCDept\\41a_IQC\\04 Inspection\\0000 OPEN Tool System\\06 DCI"; 
+            dciDirectory = "\\\\apbiphsh04\\41_PQCDept\\41a_IQC\\04 Inspection\\0000 OPEN Tool System\\06 DCI";
             ngDirectory = "\\\\apbiphsh04\\41_PQCDept\\41a_IQC\\04 Inspection\\0000 OPEN Tool System\\07 NG Parts Illustration";
             //qhcDirectory = "\\\\apbiphsh04\\41_PQCDept\\41a_IQC\\04 Inspection\\000 OPEN System\\03 Quality History Card\\00 QHC FILES";
             qhcDirectory = "\\\\apbiphsh04\\41_PQCDept\\41a_IQC\\04 Inspection\\0000 OPEN Tool System\\05 QHC rev6";
@@ -43,17 +49,33 @@ namespace IQCSystemV2.Functions
         {
             return Task.Run(() =>
             {
+                _token.ThrowIfCancellationRequested();
                 JObject result = new JObject();
                 result["threeD"] = ThreeDList();
+
+                _token.ThrowIfCancellationRequested();
                 result["twoD"] = TwoDList();
+
+                _token.ThrowIfCancellationRequested();
                 result["wi"] = WIList();
+
+                _token.ThrowIfCancellationRequested();
                 result["artwork"] = ArtWorkList();
+
+                _token.ThrowIfCancellationRequested();
                 result["dci"] = DCIList();
+
+                _token.ThrowIfCancellationRequested();
                 result["ng"] = NGList();
+
+                _token.ThrowIfCancellationRequested();
                 result["qhc"] = QHCList();
+
+                _token.ThrowIfCancellationRequested();
                 result["generalWI"] = GeneralWIList();
+
                 return result;
-            });
+            }, _token);
         }
 
         public Task<JObject> ReturnSpecifiedAsync(string type)
@@ -63,14 +85,30 @@ namespace IQCSystemV2.Functions
                 JObject result = new JObject();
                 switch (type)
                 {
-                    case "3d": result["threeD"] = ThreeDList(); break;
-                    case "2d": result["twoD"] = TwoDList(); break;
-                    case "wi": result["wi"] = WIList(); break;
-                    case "artwork": result["artwork"] = ArtWorkList(); break;
-                    case "dci": result["dci"] = DCIList(); break;
-                    case "ng": result["ng"] = NGList(); break;
-                    case "qhc": result["qhc"] = QHCList(); break;
-                    case "generalWI": result["generalWI"] = GeneralWIList(); break;
+                    case "3d":
+                        result["threeD"] = ThreeDList();
+                        break;
+                    case "2d":
+                        result["twoD"] = TwoDList();
+                        break;
+                    case "wi":
+                        result["wi"] = WIList();
+                        break;
+                    case "artwork":
+                        result["artwork"] = ArtWorkList();
+                        break;
+                    case "dci":
+                        result["dci"] = DCIList();
+                        break;
+                    case "ng":
+                        result["ng"] = NGList();
+                        break;
+                    case "qhc":
+                        result["qhc"] = QHCList();
+                        break;
+                    case "generalWI":
+                        result["generalWI"] = GeneralWIList();
+                        break;
                 }
                 return result;
             });
@@ -80,7 +118,7 @@ namespace IQCSystemV2.Functions
         {
             string searchPattern = $"*{searchItem}*"; // Search for files containing the search term
             JObject threeDList = new JObject
-            {                 
+            {
                 ["threeD"] = LoadFilesFromDirectory(threedDirectory, serverResourceDirectory + "3d", searchPattern)
             };
             return threeDList;
@@ -159,6 +197,8 @@ namespace IQCSystemV2.Functions
         private JArray LoadFilesFromDirectory(string directoryPath, string pdfDestinationPath, string searchPattern = "*")
         {
             JArray result = new JArray();
+            // Use a HashSet to track names and prevent duplicates (case-insensitive)
+            HashSet<string> processedFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
             try
             {
@@ -168,110 +208,183 @@ namespace IQCSystemV2.Functions
                     MessageBox.Show("Directory does not exist.");
                     return result;
                 }
+
                 WriteToLocalLog("INFO", directoryPath, "N/A", $"Started scanning directory for pattern: {searchPattern}");
                 var files = Directory.GetFiles(directoryPath, searchPattern);
                 WriteToLocalLog("DEBUG", directoryPath, "N/A", "LoadFiles", $"Found {files.Length} files matching {searchPattern}");
 
                 foreach (var file in files)
                 {
+                    if (_token.IsCancellationRequested)
+                        return result;
                     FileInfo fileInfo = new FileInfo(file);
 
-                    // Skip files with '~' in the name
+                    // 1. Skip files with '~' (temp files)
                     if (fileInfo.Name.Contains("~"))
                         continue;
+
+                    // 2. Check if this file name has already been added to our list
+                    if (processedFiles.Contains(fileInfo.Name))
+                    {
+                        WriteToLocalLog("DEBUG", fileInfo.FullName, "N/A", "Skipped: Duplicate file name");
+                        continue;
+                    }
 
                     JObject fileEntry = new JObject
                     {
                         ["fileName"] = fileInfo.Name,
-                        ["pdfName"] = null // Default to null; assign later if applicable
+                        ["pdfName"] = null
                     };
 
-                    if (fileInfo.Extension.Equals(".pdf", StringComparison.OrdinalIgnoreCase))
-                    {
-                        // Already a PDF, no conversion needed
-                        MoveToServerResource(fileInfo.FullName, pdfDestinationPath);
-                        WriteToLocalLog("SUCCESS", fileInfo.FullName, pdfDestinationPath, "Direct PDF move (No conversion needed)");
-                        result.Add(fileEntry);
-                    }
-                    else if (fileInfo.Extension.Equals(".xls", StringComparison.OrdinalIgnoreCase) ||
-                             fileInfo.Extension.Equals(".xlsx", StringComparison.OrdinalIgnoreCase) ||
-                             fileInfo.Extension.Equals(".xlsm", StringComparison.OrdinalIgnoreCase))
-                    {
-                        // Convert Excel file to PDF
-                        string pdfFilePath = Path.Combine(pdfDestinationPath, $"{Path.GetFileNameWithoutExtension(fileInfo.Name)}.pdf");
-                        string pdfName = ConvertToPdf(fileInfo.FullName, pdfDestinationPath);
-                        fileEntry["pdfName"] = pdfName;
-                        result.Add(fileEntry);
-                    }
-                    else
+                    bool shouldAdd = false;
+                    try
                     {
 
+                        if (fileInfo.Extension.Equals(".pdf", StringComparison.OrdinalIgnoreCase))
+                        {
+                            string destinationFile = Path.Combine(pdfDestinationPath, fileInfo.Name);
+
+                            if (!destinationFile.Contains("generalWI")) {
+                                File.Copy(fileInfo.FullName, destinationFile, true);
+                            } 
+                            
+
+                            WriteToLocalLog("SUCCESS", fileInfo.FullName, destinationFile, "PDF copied");
+                            shouldAdd = true;
+                        }
+                        else if (fileInfo.Extension.Equals(".xls", StringComparison.OrdinalIgnoreCase) ||
+                        fileInfo.Extension.Equals(".xlsx", StringComparison.OrdinalIgnoreCase) ||
+                        fileInfo.Extension.Equals(".xlsm", StringComparison.OrdinalIgnoreCase))
+                        {
+                            // Logic for potential conversion (commented out per your snippet)
+                            string pdfName = ConvertToPdf(fileInfo.FullName, pdfDestinationPath);
+                            fileEntry["pdfName"] = pdfName;
+                            shouldAdd = true;
+                        }
+                        else
+                        {
+                            WriteToLocalLog("INFO", fileInfo.FullName, "N/A", "Skipped: Unsupported file type");
+                            shouldAdd = true;
+                        }
                     }
+                    catch (OperationCanceledException)
                     {
-                        WriteToLocalLog("INFO", fileInfo.FullName, "N/A", "Skipped: Unsupported file type");
-                        // Other file types, no conversion
+                        // Break the loop immediately and return what we have
+                        WriteToLocalLog("INFO", directoryPath, "N/A", "LoadFiles", "Scan stopped due to cancellation.");
+                        return result;
+                    }
+
+                    // 3. Finalize adding the entry
+                    if (shouldAdd)
+                    {
                         result.Add(fileEntry);
+                        processedFiles.Add(fileInfo.Name); // Mark as processed
                     }
                 }
             }
+
             catch (Exception ex)
             {
-                // Consider logging the error
-                WriteToLocalLog("FATAL", directoryPath, "N/A", $"Critical error in LoadFilesFromDirectory: {ex.Message}");
-                Console.WriteLine($"Error processing files: {ex.Message}");
-                MessageBox.Show($"Error processing files: {ex.Message}");
+
+                WriteToLocalLog("DEBUG", "APP", "N/A", $"Identity: {System.Security.Principal.WindowsIdentity.GetCurrent().Name}");
+                //MessageBox.Show($"Error processing files: {ex.Message}");
             }
 
             return result;
         }
 
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        private static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
+
         private string ConvertToPdf(string excelFilePath, string pdfFilePath)
         {
-            Microsoft.Office.Interop.Excel.Application excelApp = new Microsoft.Office.Interop.Excel.Application();
-            
-            excelApp.DisplayAlerts = false;
-            excelApp.AskToUpdateLinks = false;
+            Microsoft.Office.Interop.Excel.Application excelApp = null;
             Workbook workbook = null;
+            uint processId = 0;
+
             try
             {
-                // Open the Excel file
+                _token.ThrowIfCancellationRequested();
+
+                excelApp = new Microsoft.Office.Interop.Excel.Application();
+
+                // Capture the Process ID of THIS specific Excel instance
+                GetWindowThreadProcessId((IntPtr)excelApp.Hwnd, out processId);
+
+                excelApp.DisplayAlerts = false;
+                excelApp.Visible = false;
+
+                _token.ThrowIfCancellationRequested();
+
                 workbook = excelApp.Workbooks.Open(excelFilePath, UpdateLinks: 0, ReadOnly: true);
 
-                // Generate the full path of the PDF by combining the directory and the file name
-                string pdfFullPath = Path.Combine(pdfFilePath, Path.GetFileNameWithoutExtension(excelFilePath) + ".pdf");
+                _token.ThrowIfCancellationRequested();
 
-                // Export as PDF
+                string pdfFullPath = Path.Combine(pdfFilePath, Path.GetFileNameWithoutExtension(excelFilePath) + ".pdf");
                 workbook.ExportAsFixedFormat(XlFixedFormatType.xlTypePDF, pdfFullPath);
 
-                Console.WriteLine("Excel file successfully converted to PDF.");
-                WriteToLocalLog("SUCCESS", excelFilePath, pdfFullPath, "ConvertToPdf", "Conversion Complete");
-                // Extract and return the PDF file name (not the full path)
-                string pdfFileName = Path.GetFileName(pdfFullPath);
-
-                Console.WriteLine("Generated PDF file name: " + pdfFileName);
-                return pdfFileName; // Return the file name (e.g., "QHC_D01G8F001_Calamba Shinei Industry Philippines.pdf")
+                return Path.GetFileName(pdfFullPath);
             }
             catch (Exception ex)
             {
-                WriteToLocalLog("ERROR", excelFilePath, "N/A", "ConvertToPdf", $"FAILED: {ex.Message}");
-                Console.WriteLine("Error: " + ex.Message);
-                return null; // Return null if an error occurs
+                if (ex is OperationCanceledException || _token.IsCancellationRequested)
+                {
+                    WriteToLocalLog("ABORT", excelFilePath, "N/A", "ConvertToPdf", "User cancelled. Killing process.");
+                    // Force kill the process if we are in a cancellation state
+                    KillExcelProcess(processId);
+                    throw new OperationCanceledException(_token);
+                    throw;
+                }
+                WriteToLocalLog("ERROR", excelFilePath, "N/A", "ConvertToPdf", ex.Message);
+                return null;
             }
             finally
             {
-                // Clean up
+                // 4. Proper COM Release Sequence
                 if (workbook != null)
                 {
-                    workbook.Close(false);
-                    System.Runtime.InteropServices.Marshal.ReleaseComObject(workbook);
+                    try
+                    {
+                        workbook.Close(false);
+                    }
+                    catch { }
+                    Marshal.ReleaseComObject(workbook);
+                    workbook = null;
                 }
 
                 if (excelApp != null)
                 {
-                    excelApp.Quit();
-                    System.Runtime.InteropServices.Marshal.ReleaseComObject(excelApp);
+                    try
+                    {
+                        excelApp.Quit();
+                    }
+                    catch { }
+                    Marshal.ReleaseComObject(excelApp);
+                    excelApp = null;
+                }
+
+                // 5. Final Garbage Collection (Forces the Task Manager to clear)
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+
+                // 6. If it's STILL in Task Manager because of a hang/cancellation, kill it
+                if (_token.IsCancellationRequested)
+                {
+                    KillExcelProcess(processId);
                 }
             }
+        }
+
+        private void KillExcelProcess(uint pid)
+        {
+            if (pid == 0)
+                return;
+            try
+            {
+                // This targets ONLY the ID we captured, leaving your other work safe
+                Process.GetProcessById((int)pid).Kill();
+            }
+            catch { /* Process already closed naturally */ }
         }
 
         private void WriteToLocalLog(string status, string source, string output, string methodName, string message = "")

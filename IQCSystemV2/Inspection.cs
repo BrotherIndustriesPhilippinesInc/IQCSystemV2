@@ -8,6 +8,7 @@ using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.StartPanel;
@@ -82,7 +83,6 @@ namespace IQCSystemV2
                     script.src = 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js';
                     document.head.appendChild(script);
                 ");
-
                 await webViewFunctions.ExecuteJavascript(@"
                     // Inject SweetAlert2 CSS
                     let swalLink = document.createElement('link');
@@ -95,7 +95,6 @@ namespace IQCSystemV2
                     swalScript.src = 'https://cdn.jsdelivr.net/npm/sweetalert2@11.25.1/dist/sweetalert2.all.min.js';
                     document.head.appendChild(swalScript);
                 ");
-
                 await webViewFunctions.ExecuteJavascript(@"
                     // Call machine lot request function
 
@@ -105,10 +104,7 @@ namespace IQCSystemV2
                         console.log(partCode.value);
                         sendToWebView('machineLotRequest', {partCode: partCode.value, checkLot: checkLot.value});
                     }
-                    
                 ");
-
-
                 //LOAD PANELS
                 await webViewFunctions.ExecuteJavascript(@"
                     let div = document.createElement('div');
@@ -117,9 +113,8 @@ namespace IQCSystemV2
                             <div class=""mt-2"">
                                 <button id=""back"" class=""btn btn-warning"" onclick=""back()"">Back</button>
                             </div>
-
                             <div class=""d-flex gap-2 mt-2 justify-content-around"">
-                                <div> 
+                                <div>
                                     <button id=""threeD"" class=""btn btn-primary"">3D</button>
                                     <button id=""twoD"" class=""btn btn-primary"">2D</button>
                                     <button id=""wi"" class=""btn btn-primary"">Work Instructions</button>
@@ -128,6 +123,9 @@ namespace IQCSystemV2
                                     <button id=""ng"" class=""btn btn-primary"">NG Illustration</button>
                                     <button id=""qhc"" class=""btn btn-primary"">Quality History Card</button>
                                     <button id=""generalWI"" class=""btn btn-primary"">General Work Instructions</button>
+                                    <div id=""loadingSpinner"" class=""spinner-border spinner-border-sm text-primary ms-2 d-none"" role=""status"">
+                                        <span class=""visually-hidden"">Loading...</span>
+                                    </div>
                                 </div>
                                 <div>
                                     <button id=""machineLotRequest"" 
@@ -137,13 +135,13 @@ namespace IQCSystemV2
                                     </button>
                                 </div>
                             </div>
-                            <div id=""items-container""></div>
+                            <div id=""items-container"">
+                            </div>
                             
                         </div>
                     `;
                     document.body.prepend(div);
                 ");
-
 
                 //LOAD SCRIPTS
                 await webViewFunctions.ExecuteJavascript(@"
@@ -198,10 +196,17 @@ namespace IQCSystemV2
                     let items;
                     async function getAllItems(){
                         let data;
+
+                        const spinner = document.getElementById(""loadingSpinner"");
+                        if(spinner) spinner.classList.remove(""d-none"");
+
                         sendToWebView(""GetList"", {part_code});
+                        
                         await receiveFromWebView((e)=>{
                             data = e;
                         });
+
+                        if(spinner) spinner.classList.add(""d-none"");
                         return data;
                     }
                     
@@ -230,7 +235,6 @@ namespace IQCSystemV2
                         //Attach events to ALL new buttons
                         document.getElementById(""cmdSave"").addEventListener(""click"", async function (e) {
                             e.preventDefault(); // stop normal submission first
-
                             try {
                                 let spvString = document.getElementsByName(""txtSupervisor$ctl00"")[0].value;
                                 if (!spvString) {
@@ -244,7 +248,6 @@ namespace IQCSystemV2
                                 }
 
                                 const result = await insertInspectionData();
-
                                 await Swal.fire({
                                     title: ""Inspection Saved! 🎉"",
                                     text: ""The inspection data has been successfully inserted."",
@@ -272,10 +275,6 @@ namespace IQCSystemV2
                             }
                         });
                         
-
-
-
-
                         items = await getAllItems();
                         console.log(""Got items:"", items);
 
@@ -309,7 +308,7 @@ namespace IQCSystemV2
                     function generateItems(category) {
                     console.log('trial');
                         let container = document.getElementById('items-container');
-                        container.innerHTML = ''; 
+                        container.innerHTML = '';
                         container.className = ""d-flex gap-2 flex-wrap mt-2"";
 
                         items[category][category].forEach(item => {
@@ -330,10 +329,12 @@ namespace IQCSystemV2
                                 let category = this.getAttribute('data-category');
                                 let fileName = this.getAttribute('data-item');
                                 console.log(`${category} & ${fileName} clicked`);
+
                                 if (category == ""threeD"") 
                                 {
                                     openThreeD(fileName); 
-                                }else{
+                                }
+                                else{
                                     openItems(category, fileName);
                                 }
                             });
@@ -342,19 +343,16 @@ namespace IQCSystemV2
 
                     //Open 3D
                     function openThreeD(fileName) {
-                        sendToWebView(""OpenThreeD"", {fileName});
+                        sendToWebView(""OpenThreeD"", {fileName, part_code});
                     }
-
 
                     //Open Items
                     function openItems(category, fileName) {
                         let container = document.getElementById('items-container');
-
-                        // Build the file path (adjust if using http or file://)
                         let pdfUrl = `http://apbiphiqcwb01:8080/iqcv2/resources/open_tool/${category}/${fileName}`;
                         pdfUrl = pdfUrl.replace(""xlsm"", ""pdf"");
                         pdfUrl = pdfUrl.replace(""xlsx"", ""pdf"");
-
+                        // Build the file path (adjust if using http or file://)
                         // Clear old content
                         container.innerHTML = '';
 
@@ -366,7 +364,6 @@ namespace IQCSystemV2
                         `;
                     }
 
-                    // Hook buttons to generator
                     document.getElementById('threeD').addEventListener('click', () => generateItems('threeD'));
                     document.getElementById('twoD').addEventListener('click', () => generateItems('twoD'));
                     document.getElementById('wi').addEventListener('click', () => generateItems('wi'));
@@ -377,18 +374,18 @@ namespace IQCSystemV2
                     document.getElementById('generalWI').addEventListener('click', () => generateItems('generalWI'));
 
                     document.getElementsByClassName('iqc-items')[0].addEventListener('click', function () {
-                        
                         let category = this.getAttribute('data-category');
                         let fileName = this.getAttribute('data-item');
                         console.log(`${category} & ${fileName} clicked`);
+
                         openItems(category, fileName);
                     });
 
                     function back(){
                         window.history.go(-2);
+                        sendToWebView(""Back"");
                     }
 
-                    //Timer Function
                     function startTimer() {
                         startTime = Date.now();
 
@@ -496,11 +493,9 @@ namespace IQCSystemV2
                         }).catch(err => alert(err));
                     }
 
-
                     function getCheckItems(){
                         let outer = document.getElementById(""checkResultBodyTable"").outerHTML;
                         return outer;
-
                     }
 
                    async function getMesName() {
@@ -539,9 +534,26 @@ namespace IQCSystemV2
             }
         }
 
+        private CancellationTokenSource _cts;
+
         private async void webView21_WebMessageReceived(object sender, Microsoft.Web.WebView2.Core.CoreWebView2WebMessageReceivedEventArgs e)
         {
-            OpenToolHandler openTool;
+            try
+            {
+                if (_cts != null)
+                {
+                    _cts.Cancel();
+                    _cts.Dispose();
+                    _cts = null; 
+                }
+            }
+            catch (ObjectDisposedException) {
+            }
+
+            // 2. Create new token
+            _cts = new CancellationTokenSource();
+
+            OpenToolHandlerV2 openTool;
 
             try
             {
@@ -549,19 +561,37 @@ namespace IQCSystemV2
 
                 if (action["actionName"].ToString() == "GetList")
                 {
-                    openTool = new OpenToolHandler(action["data"]["part_code"].ToString());
+                    var currentToken = _cts.Token;
+                    openTool = new OpenToolHandlerV2(action["data"]["part_code"].ToString(), currentToken);
                     webViewFunctions.SendDataToWeb(await openTool.ReturnAllAsync(), "ReturnAll");
                 }
                 else if (action["actionName"].ToString() == "OpenThreeD")
                 {
+                    openTool = new OpenToolHandlerV2(action["data"]["part_code"].ToString(), _cts.Token);
                     ProcessStartInfo startInfo = new ProcessStartInfo
                     {
                         FileName = "\\\\apbiphsh04\\41_PQCDept\\41a_IQC\\04 Inspection\\0000 OPEN Tool System\\01 3D Drawing\\" + action["data"]["fileName"].ToString(),
                         UseShellExecute = true
                     };
-
                     Process.Start(startInfo);
-                }else if (action["actionName"].ToString() == "machineLotRequest")
+                }
+                else if (action["actionName"].ToString() == "Back")
+                {
+                    try
+                    {
+                        if (_cts != null)
+                        {
+                            _cts.Cancel();
+                            _cts.Dispose();
+                            _cts = null;
+                        }
+                    }
+                    catch (ObjectDisposedException)
+                    {
+
+                    }
+                }
+                else if (action["actionName"].ToString() == "machineLotRequest")
                 {
                     string partCode = action["data"]["partCode"].ToString();
                     string checkLot = action["data"]["checkLot"].ToString();
@@ -574,7 +604,10 @@ namespace IQCSystemV2
                     }
                 }
             }
+            catch (OperationCanceledException)
+            {
 
+            }
             catch (Exception ex)
             {
                 JObject templateGenerationError = new JObject()
@@ -590,6 +623,23 @@ namespace IQCSystemV2
         private void Inspection_Load(object sender, EventArgs e)
         {
 
+        }
+
+        private void Inspection_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            try
+            {
+                if (_cts != null)
+                {
+                    _cts.Cancel();
+                    _cts.Dispose();
+                    _cts = null;
+                }
+            }
+            catch (ObjectDisposedException)
+            {
+
+            }
         }
     }
 }
